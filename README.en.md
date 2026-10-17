@@ -1,4 +1,4 @@
-# Document Scanner – Prototype
+# The Family Document Scanner
 
 [עברית](README.md) · English
 
