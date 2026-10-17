@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f5fbf">
+  <title>סורק מסמכים – אב-טיפוס</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script async src="https://accounts.google.com/gsi/client"></script>
+  <script async src="https://apis.google.com/js/api.js"></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="top">
+    <h1>סורק מסמכים <small>אב-טיפוס</small></h1>
+    <div class="auth">
+      <span id="auth-user" class="status"></span>
+      <button id="btn-auth" class="ghost">התחבר עם גוגל</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="scan" class="active">1. סריקה</button>
+    <button data-tab="ocr">2. זיהוי טקסט</button>
+    <button data-tab="share">3. שיתוף</button>
+    <button data-tab="setup">הגדרות</button>
+  </nav>
+
+  <main>
+    <!-- ===== 1. סריקה ===== -->
+    <section id="tab-scan" class="tab">
+      <div id="scan-start" class="step">
+        <p class="hint">בודק: זיהוי שולי הדף, חיתוך ויישור בתוך הדפדפן.</p>
+        <p id="cv-status" class="status">טוען את OpenCV (כ־10MB, רק בפעם הראשונה)…</p>
+        <div class="buttons col">
+          <button id="btn-camera" class="primary big" disabled>פתח מצלמה</button>
+          <label class="button" id="lbl-file">בחר תמונה מהגלריה<input id="file-input" type="file" accept="image/*" hidden></label>
+          <button id="btn-sample" disabled>תמונת דוגמה</button>
+        </div>
+        <p id="page-count" class="status"></p>
+      </div>
+
+      <div id="scan-camera" class="step" hidden>
+        <div class="video-wrap">
+          <video id="video" playsinline muted></video>
+          <canvas id="overlay"></canvas>
+        </div>
+        <p id="det-stat" class="status"></p>
+        <label class="check"><input type="checkbox" id="auto-capture" checked> צילום אוטומטי כשהדף יציב</label>
+        <div class="buttons">
+          <button id="btn-capture" class="primary big">צלם</button>
+          <button id="btn-cam-cancel">ביטול</button>
+        </div>
+      </div>
+
+      <div id="scan-crop" class="step" hidden>
+        <p class="hint">גרור את הפינות כדי לתקן. בזמן הגרירה מופיעה זכוכית מגדלת.</p>
+        <canvas id="crop-canvas"></canvas>
+        <p id="crop-stat" class="status"></p>
+        <div class="buttons">
+          <button id="btn-crop-ok" class="primary">אישור</button>
+          <button id="btn-redetect">זהה מחדש</button>
+          <button id="btn-crop-full">כל התמונה</button>
+          <button id="btn-crop-cancel">ביטול</button>
+        </div>
+      </div>
+
+      <div id="scan-result" class="step" hidden>
+        <div class="row">
+          <label>פילטר
+            <select id="filter">
+              <option value="gray">שיפור אוטומטי (אפור)</option>
+              <option value="color">צבע מקורי</option>
+              <option value="bw">שחור-לבן</option>
+            </select>
+          </label>
+          <button id="btn-rotate">סובב 90°</button>
+        </div>
+        <div id="result-wrap" class="preview"></div>
+        <p id="result-stat" class="status"></p>
+        <label class="field">שם המסמך<input id="doc-title" placeholder="למשל: חשבון חשמל"></label>
+        <div class="buttons">
+          <button id="btn-add-page">+ עמוד נוסף</button>
+          <button id="btn-finish" class="primary">סיימתי – צור PDF</button>
+          <button id="btn-retake">צלם שוב</button>
+        </div>
+      </div>
+
+      <div id="scan-pages" class="step" hidden>
+        <p id="pdf-stat" class="status"></p>
+        <div id="thumbs" class="thumbs"></div>
+        <div class="buttons col">
+          <button id="btn-share-pdf" class="primary">שתף (וואטסאפ / מייל)</button>
+          <button id="btn-download-pdf">הורד PDF</button>
+          <button id="btn-to-ocr">המשך לבדיקת זיהוי טקסט ←</button>
+          <button id="btn-new-scan">סריקה חדשה</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 2. זיהוי טקסט ===== -->
+    <section id="tab-ocr" class="tab" hidden>
+      <p class="hint">בודק: זיהוי טקסט בעברית דרך גוגל דרייב, בהשוואה ל־Tesseract שרץ בטלפון עצמו.</p>
+      <div class="card">
+        <div id="ocr-source" class="status">לא נבחר מסמך</div>
+        <div class="buttons">
+          <button id="btn-ocr-from-scan">המסמך מהסריקה</button>
+          <button id="btn-ocr-sample">מסמך דוגמה</button>
+          <label class="button">קובץ…<input id="ocr-file" type="file" accept="application/pdf,image/*" hidden></label>
+        </div>
+      </div>
+      <div class="buttons col">
+        <button id="btn-ocr-drive" class="primary">הרץ זיהוי דרך דרייב</button>
+        <button id="btn-ocr-tess">הרץ Tesseract בטלפון (להשוואה)</button>
+      </div>
+      <h3>דרייב <span id="ocr-drive-stat" class="status"></span></h3>
+      <textarea id="ocr-drive-text" dir="rtl" readonly></textarea>
+      <h3>Tesseract <span id="ocr-tess-stat" class="status"></span></h3>
+      <textarea id="ocr-tess-text" dir="rtl" readonly></textarea>
+      <h3>יומן</h3>
+      <div id="ocr-log" class="log"></div>
+    </section>
+
+    <!-- ===== 3. שיתוף ===== -->
+    <section id="tab-share" class="tab" hidden>
+      <p class="hint">בודק: האם בן משפחה יכול לקרוא את התיקייה שלך דרך האפליקציה, עם ההרשאה המצומצמת. צריך שני חשבונות גוגל.</p>
+      <div class="card">
+        <h3>א. המשתף (החשבון שלך)</h3>
+        <button id="btn-share-setup" class="primary">צור / עדכן תיקיית בדיקה</button>
+        <div id="share-folder" class="status"></div>
+        <label class="field">המייל של בן המשפחה<input id="share-email" type="email" dir="ltr" autocomplete="email"></label>
+        <div class="buttons">
+          <button id="btn-share-grant">שתף לצפייה</button>
+          <button id="btn-share-revoke">בטל שיתוף</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>ב. המקבל (חשבון אחר)</h3>
+        <p class="hint">החלף לחשבון של בן המשפחה (כפתור למעלה), או פתח את האפליקציה בטלפון שלו.</p>
+        <div class="buttons col">
+          <button id="btn-pick-folder" class="primary">בחר תיקייה ששותפה איתי</button>
+          <button id="btn-pick-index">בחר את קובץ האינדקס (_index.json)</button>
+        </div>
+        <ul id="share-results" class="results"></ul>
+      </div>
+      <h3>יומן</h3>
+      <div id="share-log" class="log"></div>
+    </section>
+
+    <!-- ===== הגדרות ===== -->
+    <section id="tab-setup" class="tab" hidden>
+      <p class="hint">פרטי החיבור לגוגל. ההוראות המלאות בקובץ README.md.</p>
+      <label class="field">OAuth Client ID<input id="cfg-client" dir="ltr"></label>
+      <label class="field">API key (לבורר הקבצים)<input id="cfg-key" dir="ltr"></label>
+      <label class="field">App ID (Project number)<input id="cfg-app" dir="ltr" inputmode="numeric"></label>
+      <button id="btn-cfg-save" class="primary">שמור</button>
+      <p class="status">כתובת האפליקציה, להוספה ב־Authorized JavaScript origins:<br><code id="cfg-origin" dir="ltr"></code></p>
+      <h3>סיכום תוצאות הבדיקות</h3>
+      <div class="buttons">
+        <button id="btn-report-copy">העתק סיכום</button>
+        <button id="btn-report-clear">נקה</button>
+      </div>
+      <pre id="report" class="log"></pre>
+    </section>
+  </main>
+</body>
+</html>

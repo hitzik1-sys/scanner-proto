@@ -1,0 +1,14 @@
+{
+  "name": "סורק מסמכים (אב-טיפוס)",
+  "short_name": "סורק",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#1f5fbf",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
