@@ -10,6 +10,7 @@ let stream = null;
 let loopTimer = null;
 let lastQuad = null;
 let stableSince = 0;
+let autoMode = false;
 let capturing = false;
 let detectTimes = [];
 
@@ -58,6 +59,7 @@ export function initScan() {
   $('#btn-sample').onclick = () => startCrop(makeSamplePhoto(), 'דוגמה');
 
   $('#btn-capture').onclick = capture;
+  $('#btn-auto-mode').onclick = () => setAutoMode(!autoMode);
   $('#btn-cam-cancel').onclick = () => { stopCamera(); step(state.pages.length ? 'start' : 'start'); };
 
   $('#btn-redetect').onclick = () => {
@@ -117,13 +119,25 @@ async function openCamera() {
   v.srcObject = stream;
   await v.play();
   detectTimes = [];
-  lastQuad = null;
-  stableSince = 0;
   capturing = false;
   step('camera');
   const s = stream.getVideoTracks()[0].getSettings();
   report('פתיחת מצלמה', true, `${s.width}x${s.height}`);
-  tick();
+  setAutoMode(false);
+}
+
+// מצב ידני (ברירת מחדל): המשתמש לוחץ "צלם", והזיהוי קורה רק אחרי הצילום.
+// מצב אוטומטי: זיהוי חי של הדף וצילום אוטומטי כשהוא יציב.
+function setAutoMode(on) {
+  autoMode = on;
+  clearTimeout(loopTimer);
+  lastQuad = null;
+  stableSince = 0;
+  const ov = $('#overlay');
+  ov.getContext('2d').clearRect(0, 0, ov.width, ov.height);
+  $('#btn-auto-mode').textContent = on ? 'מעבר לצילום ידני' : 'מעבר לזיהוי אוטומטי';
+  $('#det-stat').textContent = on ? 'מחפש דף…' : 'כוון את המצלמה אל המסמך ולחץ "צלם"';
+  if (on) tick();
 }
 
 function stopCamera() {
@@ -137,7 +151,7 @@ function stopCamera() {
 }
 
 function tick() {
-  if (!stream) return;
+  if (!stream || !autoMode) return;
   const v = $('#video');
   const ov = $('#overlay');
   if (v.videoWidth && !capturing) {
@@ -167,12 +181,11 @@ function tick() {
 
     const now = performance.now();
     if (stable) { if (!stableSince) stableSince = now; } else stableSince = 0;
-    const auto = $('#auto-capture').checked;
     const left = stableSince ? Math.max(0, 1500 - (now - stableSince)) : null;
     $('#det-stat').textContent = `זיהוי: ${dt}ms לפריים · ${q ? (stable ? 'הדף יציב' : 'נמצא דף') : 'מחפש דף…'}`
-      + (auto && left !== null ? ` · מצלם בעוד ${(left / 1000).toFixed(1)}` : '');
+      + (left !== null ? ` · מצלם בעוד ${(left / 1000).toFixed(1)}` : '');
     lastQuad = q;
-    if (auto && stableSince && now - stableSince > 1500) { capture(); return; }
+    if (stableSince && now - stableSince > 1500) { capture(); return; }
   }
   loopTimer = setTimeout(tick, 150);
 }
