@@ -111,6 +111,54 @@ That isn't a risk as long as the code has no secrets, and it has none:
 - **Consent screen:** what a user sees when signing in: the app's name and which permissions it asks for. In **Testing** mode, only people on the Test users list can sign in, up to 100.
 - **Client ID and API key:** the app's identity with Google (see the table above).
 
+### Why do we need a Google project at all?
+
+The project is needed **only for features that access the user's Google account**. Everything else runs on the phone itself.
+
+| Feature | Needs a Google project? |
+|---|---|
+| Capture, corner detection, cropping, straightening, filters | No. OpenCV runs on the phone |
+| Creating the PDF | No |
+| Sharing to WhatsApp and email through the share sheet | No. That's part of the operating system |
+| Text recognition with Tesseract | No. Runs on the phone |
+| **Signing in with Google** | **Yes** |
+| **Automatic saving to Drive** (fixed name, folder, tags) | **Yes** |
+| **Text recognition through Drive** (better Hebrew quality) | **Yes** |
+| **Sharing between family members, and the file picker** | **Yes** |
+
+**Why Google requires it:** when an app asks for access to someone's account, Google needs to know who is asking. The project is the app's "ID card":
+
+- **Consent screen:** shows the user the app's name and the permissions it asks for.
+- **Approved addresses:** only your site can use this identity.
+- **Revoking and limits:** the user can revoke access at any time, and Google limits how many requests the app sends.
+
+**What if we skip the project?** You can still save to Drive by hand: in Android's share sheet choose **"Drive"**, and Drive asks which folder to save to. But you lose:
+
+- **Fixed naming:** the `20261017_text` name format isn't set automatically.
+- **Tags and the index:** none, so no organized search.
+- **Search by content:** only on the phone with Tesseract, and only for documents scanned on that phone. It's erased if the browser's data is cleared.
+- **Shared search between family members, and backup:** none.
+
+**Bottom line:** without the project you get a simple scanner. With it you get a document management system. The project is free.
+
+### The Test users list: who can sign in
+
+The app is set to **Testing** mode at Google. In this mode, **only** the emails on the Test users list can sign in, up to 100 people. It's a guest list.
+
+| | On the list | Not on the list |
+|---|---|---|
+| Opening the site, scanning, PDF, sharing to WhatsApp and email, Tesseract | Works | Works (doesn't need Google) |
+| "Sign in with Google" | Works, after a *"Google hasn't verified this app"* warning on first sign-in → **Continue** | **Blocked.** Google shows *"Access blocked"* (Error 403: access_denied) |
+| Saving to Drive, recognition through Drive, sharing | Works, with **their own** Drive only | Not available |
+
+- **Repeat approval:** in Testing mode Google limits how long an approval lasts (usually a week), so the consent screen comes back from time to time. It's one tap.
+- **Managing the list:** Google Cloud Console → **Audience** (or *OAuth consent screen*) → **Test users**.
+- **Adding and removing:** an added user can sign in right away. A removed user can't sign in again, and any access they already have expires within an hour at most.
+
+**The alternative: publishing (Publish app).** The `drive.file` permission isn't considered sensitive, so no Google verification process is needed. After publishing, anyone with a Google account can sign in, and even then each person sees only their own files.
+
+**Recommendation for family use:** stay in Testing mode. It's a free extra layer of protection: only people you chose can sign in. The downside: the warning on first sign-in and the consent screen that returns from time to time.
+
 ### What the `drive.file` permission allows
 
 When a user signs in and approves, the app gets access **only** to:
