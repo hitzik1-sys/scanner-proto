@@ -1,9 +1,9 @@
-import { $, state, dateStamp, ms, kb, downloadBlob, report } from './util.js';
+import { $, state, dateStamp, ms, kb, downloadBlob, canvasToBlob, report } from './util.js';
 import { loadOpenCV, detectQuad, fullQuad, warpQuad, enhance, rotate90 } from './cv.js';
 import { buildPdf } from './pdf.js';
 import { makeSamplePhoto } from './sample.js';
 
-const STEPS = ['start', 'camera', 'crop', 'result', 'pages'];
+const STEPS = ['start', 'camera', 'crop', 'result', 'review', 'pages'];
 const MAX_PHOTO_SIDE = 3000;
 
 let stream = null;
@@ -12,26 +12,31 @@ let lastQuad = null;
 let stableSince = 0;
 let autoMode = false;
 let capturing = false;
+let armed = true;        // מצב אוטומטי: אחרי צילום מחכים שהדף יוחלף
+let shotQuad = null;
 let detectTimes = [];
+let camStart = 0;        // מאיזה עמוד התחיל הצילום הנוכחי
 
 let cropSource = null;   // canvas בגודל מלא
 let cropQuad = null;     // 4 נקודות בקואורדינטות המקור
 let cropView = { s: 1 }; // יחס תצוגה
 let dragIdx = null;
-let cropDetected = false;
 
 let resultBase = null;   // אחרי יישור, לפני פילטר
-let rotation = 0;
-let currentPage = null;
+let lastFilter = 'gray'; // הפילטר האחרון שנבחר, ברירת מחדל לעמוד הבא
+
+// כל העמודים של המסמך הנוכחי. התמונה המקורית נשמרת כקובץ דחוס (blob)
+// כדי לחסוך זיכרון, ומפוענחת מחדש רק כשעורכים את העמוד.
+// { blob, quad, filter, rotation, out (canvas סופי), thumb }
+let batch = [];
+let editIdx = 0;
+let seqEnd = 0;          // עריכה ברצף: עד איזה עמוד (לא כולל)
+let single = false;      // עריכת עמוד בודד מתוך רשימת העמודים
+let openToken = 0;
 
 function step(name) {
   for (const s of STEPS) $(`#scan-${s}`).hidden = s !== name;
-  if (name === 'start') updatePageCount();
-}
-
-function updatePageCount() {
-  const n = state.pages.length;
-  $('#page-count').textContent = n ? `${n} עמודים במסמך הנוכחי. סרוק את העמוד הבא.` : '';
+  if (name === 'review') renderReview();
 }
 
 export function initScan() {
@@ -48,19 +53,17 @@ export function initScan() {
   });
 
   $('#btn-camera').onclick = openCamera;
-  $('#file-input').onchange = async e => {
-    const f = e.target.files[0];
-    e.target.value = '';
-    if (!f) return;
-    await loadOpenCV();
-    const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
-    startCrop(toCanvas(bmp), 'גלריה');
+  $('#btn-more-camera').onclick = openCamera;
+  $('#file-input').onchange = addFiles;
+  $('#file-input-more').onchange = addFiles;
+  $('#btn-sample').onclick = async () => {
+    const blob = await canvasToBlob(makeSamplePhoto(), 'image/jpeg', 0.92);
+    startSequence(addPages([blob]));
   };
-  $('#btn-sample').onclick = () => startCrop(makeSamplePhoto(), 'דוגמה');
 
   $('#btn-capture').onclick = capture;
   $('#btn-auto-mode').onclick = () => setAutoMode(!autoMode);
-  $('#btn-cam-cancel').onclick = () => { stopCamera(); step(state.pages.length ? 'start' : 'start'); };
+  $('#btn-cam-done').onclick = cameraDone;
 
   $('#btn-redetect').onclick = () => {
     const t = performance.now();
@@ -70,29 +73,58 @@ export function initScan() {
     drawCrop();
   };
   $('#btn-crop-full').onclick = () => { cropQuad = fullQuad(cropSource); drawCrop(); };
-  $('#btn-crop-cancel').onclick = () => step('start');
   $('#btn-crop-ok').onclick = applyCrop;
+  for (const b of document.querySelectorAll('.btn-delete-page')) b.onclick = deletePage;
 
-  $('#filter').onchange = renderResult;
-  $('#btn-rotate').onclick = () => { rotation++; renderResult(); };
-  $('#btn-retake').onclick = () => step('start');
-  $('#btn-add-page').onclick = () => { addCurrentPage(); step('start'); };
+  $('#filter').onchange = () => renderResult();
+  $('#btn-rotate').onclick = () => { batch[editIdx].rotation++; renderResult(); };
+  $('#btn-back-crop').onclick = () => { step('crop'); drawCrop(); };
+  $('#btn-page-next').onclick = nextPage;
+
   $('#btn-finish').onclick = finish;
+  $('#btn-discard').onclick = () => { if (confirm('לבטל את כל העמודים שנסרקו?')) newScan(); };
 
   $('#btn-share-pdf').onclick = sharePdf;
   $('#btn-download-pdf').onclick = () => downloadBlob(state.pdfBlob, state.pdfName);
+  $('#btn-edit-pages').onclick = () => step('review');
   $('#btn-to-ocr').onclick = () => window.app.showTab('ocr', { fromScan: true });
-  $('#btn-new-scan').onclick = () => {
-    state.pages = []; state.pdfBlob = null; state.pdfName = null;
-    $('#doc-title').value = '';
-    step('start');
-  };
+  $('#btn-new-scan').onclick = newScan;
 
   setupCropPointer();
   window.addEventListener('resize', () => { if (!$('#scan-crop').hidden) drawCrop(); });
   // סיבוב הטלפון משנה את המקום הפנוי ואת מידות הווידאו
   new ResizeObserver(fitVideo).observe($('.cam-stage'));
   $('#video').addEventListener('resize', fitVideo);
+}
+
+function newScan() {
+  batch = [];
+  state.pages = []; state.pdfBlob = null; state.pdfName = null;
+  $('#doc-title').value = '';
+  step('start');
+}
+
+// מוסיף עמודים לסוף המסמך ומחזיר את המיקום של הראשון שבהם
+function addPages(blobs) {
+  const from = batch.length;
+  for (const blob of blobs) batch.push({ blob, quad: null, filter: null, rotation: 0, out: null, thumb: null });
+  return from;
+}
+
+async function addFiles(e) {
+  const files = [...e.target.files];
+  e.target.value = '';
+  if (!files.length) return;
+  report('בחירה מהגלריה', true, `${files.length} תמונות`);
+  await loadOpenCV();
+  startSequence(addPages(files));
+}
+
+async function decode(blob) {
+  const bmp = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+  const c = toCanvas(bmp);
+  bmp.close?.();
+  return c;
 }
 
 function toCanvas(src) {
@@ -123,6 +155,7 @@ async function openCamera() {
   await v.play();
   detectTimes = [];
   capturing = false;
+  camStart = batch.length;
   step('camera');
   fitVideo();
   const s = stream.getVideoTracks()[0].getSettings();
@@ -147,11 +180,31 @@ function setAutoMode(on) {
   clearTimeout(loopTimer);
   lastQuad = null;
   stableSince = 0;
+  armed = true;
   const ov = $('#overlay');
   ov.getContext('2d').clearRect(0, 0, ov.width, ov.height);
   $('#btn-auto-mode').textContent = on ? 'מצב ידני' : 'מצב אוטומטי';
-  $('#det-stat').textContent = on ? 'מחפש דף…' : 'כוון את המצלמה אל המסמך ולחץ "צלם"';
+  updateCamStatus();
   if (on) tick();
+}
+
+function shotCount() { return batch.length - camStart; }
+
+function updateCamStatus(extra) {
+  const n = shotCount();
+  $('#btn-cam-done').textContent = n ? `סיום (${n})` : 'ביטול';
+  const hint = autoMode ? 'מחפש דף…' : 'כוון את המצלמה אל המסמך ולחץ "צלם"';
+  $('#det-stat').textContent = (n ? `צולמו ${n} עמודים · ` : '') + (extra || hint);
+}
+
+// סיום צילום: עוברים לעריכת כל העמודים שצולמו, אחד אחרי השני
+function cameraDone() {
+  const n = shotCount();
+  stopCamera();
+  if (n) {
+    report('צילום כמה עמודים ברצף', true, `${n} עמודים`);
+    startSequence(camStart);
+  } else step(batch.length ? 'review' : 'start');
 }
 
 function stopCamera() {
@@ -193,13 +246,16 @@ function tick() {
       x.stroke();
     }
 
+    // אחרי צילום, לא מצלמים שוב עד שהדף זז או הוחלף
+    if (!armed && (!q || maxShift(q, shotQuad) > 0.15 * Math.hypot(v.videoWidth, v.videoHeight))) armed = true;
     const now = performance.now();
-    if (stable) { if (!stableSince) stableSince = now; } else stableSince = 0;
+    if (stable && armed) { if (!stableSince) stableSince = now; } else stableSince = 0;
     const left = stableSince ? Math.max(0, 1500 - (now - stableSince)) : null;
-    $('#det-stat').textContent = `זיהוי: ${dt}ms לפריים · ${q ? (stable ? 'הדף יציב' : 'נמצא דף') : 'מחפש דף…'}`
-      + (left !== null ? ` · מצלם בעוד ${(left / 1000).toFixed(1)}` : '');
+    updateCamStatus(`זיהוי: ${dt}ms לפריים · `
+      + (!armed ? 'צולם. החלף לדף הבא' : q ? (stable ? 'הדף יציב' : 'נמצא דף') : 'מחפש דף…')
+      + (left !== null ? ` · מצלם בעוד ${(left / 1000).toFixed(1)}` : ''));
     lastQuad = q;
-    if (stableSince && now - stableSince > 1500) { capture(); return; }
+    if (stableSince && now - stableSince > 1500) { capture(); }
   }
   loopTimer = setTimeout(tick, 150);
 }
@@ -208,45 +264,98 @@ function maxShift(a, b) {
   return Math.max(...a.map((p, i) => Math.hypot(p.x - b[i].x, p.y - b[i].y)));
 }
 
+// המצלמה נשארת פתוחה אחרי כל צילום, כדי לצלם את כל העמודים ברצף
 async function capture() {
   if (capturing || !stream) return;
   capturing = true;
   const v = $('#video');
-  let canvas = null;
+  let blob = null;
   let how = 'פריים מהווידאו';
   try {
     if ('ImageCapture' in window) {
-      const ic = new ImageCapture(stream.getVideoTracks()[0]);
-      const blob = await ic.takePhoto();
-      const bmp = await createImageBitmap(blob);
-      canvas = toCanvas(bmp);
+      blob = await new ImageCapture(stream.getVideoTracks()[0]).takePhoto();
       how = 'צילום מלא (takePhoto)';
     }
-  } catch { canvas = null; }
-  if (!canvas) {
-    canvas = document.createElement('canvas');
-    canvas.width = v.videoWidth;
-    canvas.height = v.videoHeight;
-    canvas.getContext('2d').drawImage(v, 0, 0);
+  } catch { blob = null; }
+  if (!blob) {
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth;
+    c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0);
+    blob = await canvasToBlob(c, 'image/jpeg', 0.92);
   }
-  stopCamera();
-  startCrop(canvas, `מצלמה, ${how}`);
+  addPages([blob]);
+  if (shotCount() === 1) report('צילום', true, how);
+  shotQuad = lastQuad;
+  armed = !autoMode;
+  stableSince = 0;
+  const stage = $('.cam-stage');
+  stage.classList.remove('flash');
+  void stage.offsetWidth;
+  stage.classList.add('flash');
+  updateCamStatus(autoMode ? 'צולם. החלף לדף הבא' : 'צולם. אפשר לצלם את העמוד הבא');
+  capturing = false;
 }
 
-// ===== חיתוך =====
+// ===== עריכת העמודים, אחד אחרי השני =====
 
-function startCrop(canvas, origin) {
+function startSequence(from) {
+  single = false;
+  seqEnd = batch.length;
+  openPage(from);
+}
+
+function editSingle(i) {
+  single = true;
+  openPage(i);
+}
+
+function pageLabel() {
+  const t = `עמוד ${editIdx + 1} מתוך ${batch.length}`;
+  for (const el of document.querySelectorAll('.page-of')) el.textContent = single ? `עריכת ${t}` : t;
+  $('#btn-page-next').textContent = single ? 'שמור' : editIdx + 1 >= seqEnd ? 'סיום' : 'הבא ←';
+}
+
+async function openPage(i) {
+  editIdx = i;
+  const page = batch[i];
+  const token = ++openToken;
+  pageLabel();
+  $('#crop-stat').textContent = 'טוען…';
+  const canvas = await decode(page.blob);
+  if (token !== openToken) return;
   cropSource = canvas;
-  const t0 = performance.now();
-  const q = detectQuad(canvas, 1000);
-  const dt = ms(t0);
-  cropDetected = !!q;
-  cropQuad = q || fullQuad(canvas, 0.05);
-  $('#crop-stat').textContent = `${canvas.width}x${canvas.height} · ${q ? `דף זוהה (${dt}ms)` : 'לא זוהה דף, סמן ידנית'}`;
-  report(`זיהוי פינות (${origin})`, cropDetected, `${canvas.width}x${canvas.height}, ${dt}ms`);
+  if (page.quad) {
+    cropQuad = page.quad.map(p => ({ ...p }));
+    $('#crop-stat').textContent = `${canvas.width}x${canvas.height}`;
+  } else {
+    const t0 = performance.now();
+    const q = detectQuad(canvas, 1000);
+    const dt = ms(t0);
+    cropQuad = q || fullQuad(canvas, 0.05);
+    $('#crop-stat').textContent = `${canvas.width}x${canvas.height} · ${q ? `דף זוהה (${dt}ms)` : 'לא זוהה דף, סמן ידנית'}`;
+    report('זיהוי פינות', !!q, `${canvas.width}x${canvas.height}, ${dt}ms`);
+  }
   step('crop');
   drawCrop();
 }
+
+function nextPage() {
+  if (single || editIdx + 1 >= seqEnd) { step('review'); return; }
+  openPage(editIdx + 1);
+}
+
+function deletePage() {
+  if (!confirm(`למחוק את עמוד ${editIdx + 1}?`)) return;
+  batch.splice(editIdx, 1);
+  if (!batch.length) { newScan(); return; }
+  if (single) { step('review'); return; }
+  seqEnd--;
+  if (editIdx >= seqEnd) step('review');
+  else openPage(editIdx);
+}
+
+// ===== חיתוך =====
 
 function drawCrop() {
   const c = $('#crop-canvas');
@@ -357,36 +466,64 @@ function setupCropPointer() {
 }
 
 function applyCrop() {
+  const page = batch[editIdx];
   const t0 = performance.now();
+  page.quad = cropQuad.map(p => ({ ...p }));
   resultBase = warpQuad(cropSource, cropQuad);
-  rotation = 0;
   const warpMs = ms(t0);
+  $('#filter').value = page.filter || lastFilter;
   step('result');
   renderResult(warpMs);
 }
 
 function renderResult(warpMs) {
+  const page = batch[editIdx];
   const t0 = performance.now();
-  const mode = $('#filter').value;
-  currentPage = rotate90(enhance(resultBase, mode), rotation);
-  const wrap = $('#result-wrap');
-  wrap.replaceChildren(currentPage);
-  $('#result-stat').textContent = `${currentPage.width}x${currentPage.height}`
+  page.filter = lastFilter = $('#filter').value;
+  page.out = rotate90(enhance(resultBase, page.filter), page.rotation);
+  page.thumb = makeThumb(page.out);
+  $('#result-wrap').replaceChildren(page.out);
+  $('#result-stat').textContent = `${page.out.width}x${page.out.height}`
     + (typeof warpMs === 'number' ? ` · יישור ${warpMs}ms` : '')
     + ` · פילטר ${ms(t0)}ms`;
 }
 
-function addCurrentPage() {
-  if (currentPage) state.pages.push(currentPage);
-  currentPage = null;
+function makeThumb(c) {
+  const t = document.createElement('canvas');
+  const k = 240 / c.height;
+  t.width = Math.round(c.width * k);
+  t.height = 240;
+  t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+  return t.toDataURL('image/jpeg', 0.7);
+}
+
+// ===== רשימת העמודים =====
+
+function renderReview() {
+  $('#review-stat').textContent = `${batch.length} עמודים במסמך`;
+  $('#review-thumbs').replaceChildren(...batch.map((p, i) => {
+    const b = document.createElement('button');
+    b.className = 'thumb';
+    b.setAttribute('aria-label', `ערוך את עמוד ${i + 1}`);
+    if (p.thumb) {
+      const img = document.createElement('img');
+      img.src = p.thumb;
+      b.append(img);
+    }
+    const n = document.createElement('span');
+    n.textContent = i + 1;
+    b.append(n);
+    b.onclick = () => editSingle(i);
+    return b;
+  }));
 }
 
 async function finish() {
-  addCurrentPage();
-  if (!state.pages.length) return;
+  if (!batch.length) return;
   const btn = $('#btn-finish');
   btn.disabled = true;
   try {
+    state.pages = batch.map(p => p.out).filter(Boolean);
     const t0 = performance.now();
     state.pdfBlob = await buildPdf(state.pages);
     const title = $('#doc-title').value.trim() || 'סריקה';
@@ -394,10 +531,9 @@ async function finish() {
     const dt = ms(t0);
     $('#pdf-stat').textContent = `${state.pdfName} · ${state.pages.length} עמודים · ${kb(state.pdfBlob.size)} · נוצר ב־${dt}ms`;
     report('יצירת PDF', true, `${state.pages.length} עמודים, ${kb(state.pdfBlob.size)}, ${dt}ms`);
-    const thumbs = $('#thumbs');
-    thumbs.replaceChildren(...state.pages.map(p => {
+    $('#thumbs').replaceChildren(...batch.filter(p => p.thumb).map(p => {
       const img = document.createElement('img');
-      img.src = p.toDataURL('image/jpeg', 0.5);
+      img.src = p.thumb;
       return img;
     }));
     step('pages');

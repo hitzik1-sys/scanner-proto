@@ -38,10 +38,9 @@
         <p id="cv-status" class="status">טוען את OpenCV (כ־10MB, רק בפעם הראשונה)…</p>
         <div class="buttons col">
           <button id="btn-camera" class="primary big" disabled>פתח מצלמה</button>
-          <label class="button" id="lbl-file">בחר תמונה מהגלריה<input id="file-input" type="file" accept="image/*" hidden></label>
+          <label class="button" id="lbl-file">בחר תמונות מהגלריה<input id="file-input" type="file" accept="image/*" multiple hidden></label>
           <button id="btn-sample" disabled>תמונת דוגמה</button>
         </div>
-        <p id="page-count" class="status"></p>
       </div>
 
       <div id="scan-camera" class="step" hidden>
@@ -56,12 +55,13 @@
           <div class="buttons">
             <button id="btn-capture" class="primary big">צלם</button>
             <button id="btn-auto-mode">מצב אוטומטי</button>
-            <button id="btn-cam-cancel">ביטול</button>
+            <button id="btn-cam-done">ביטול</button>
           </div>
         </div>
       </div>
 
       <div id="scan-crop" class="step" hidden>
+        <p class="page-of"></p>
         <p class="hint">גרור את הפינות כדי לתקן. בזמן הגרירה מופיעה זכוכית מגדלת.</p>
         <canvas id="crop-canvas"></canvas>
         <p id="crop-stat" class="status"></p>
@@ -69,11 +69,12 @@
           <button id="btn-crop-ok" class="primary">אישור</button>
           <button id="btn-redetect">זהה מחדש</button>
           <button id="btn-crop-full">כל התמונה</button>
-          <button id="btn-crop-cancel">ביטול</button>
+          <button class="btn-delete-page">מחק עמוד</button>
         </div>
       </div>
 
       <div id="scan-result" class="step" hidden>
+        <p class="page-of"></p>
         <div class="row">
           <label>פילטר
             <select id="filter">
@@ -86,11 +87,23 @@
         </div>
         <div id="result-wrap" class="preview"></div>
         <p id="result-stat" class="status"></p>
-        <label class="field">שם המסמך<input id="doc-title" placeholder="למשל: חשבון חשמל"></label>
         <div class="buttons">
-          <button id="btn-add-page">+ עמוד נוסף</button>
-          <button id="btn-finish" class="primary">סיימתי – צור PDF</button>
-          <button id="btn-retake">צלם שוב</button>
+          <button id="btn-page-next" class="primary">הבא</button>
+          <button id="btn-back-crop">חזרה לחיתוך</button>
+          <button class="btn-delete-page">מחק עמוד</button>
+        </div>
+      </div>
+
+      <div id="scan-review" class="step" hidden>
+        <p id="review-stat" class="status"></p>
+        <p class="hint">לחץ על עמוד כדי לערוך אותו שוב.</p>
+        <div id="review-thumbs" class="thumbs"></div>
+        <label class="field">שם המסמך<input id="doc-title" placeholder="למשל: חשבון חשמל"></label>
+        <div class="buttons col">
+          <button id="btn-finish" class="primary">צור PDF</button>
+          <button id="btn-more-camera">+ צלם עוד עמודים</button>
+          <label class="button">+ הוסף מהגלריה<input id="file-input-more" type="file" accept="image/*" multiple hidden></label>
+          <button id="btn-discard">בטל את הסריקה</button>
         </div>
       </div>
 
@@ -100,6 +113,7 @@
         <div class="buttons col">
           <button id="btn-share-pdf" class="primary">שתף (וואטסאפ / מייל)</button>
           <button id="btn-download-pdf">הורד PDF</button>
+          <button id="btn-edit-pages">חזרה לעריכת העמודים</button>
           <button id="btn-to-ocr">המשך לבדיקת זיהוי טקסט ←</button>
           <button id="btn-new-scan">סריקה חדשה</button>
         </div>

@@ -60,11 +60,13 @@ Open the site in Chrome. Recommended: menu ⋮ → **Add to Home screen**.
 **1. Scanning**
 
 - [ ] Scan 3–4 real documents: a page on a dark table, a page on a light table, a small crumpled receipt, a page in dim light.
-- [ ] For each one: take the photo with the **צלם** (Capture) button (manual mode, the default). Were the corners detected correctly after the photo? How many manual corrections were needed?
-- [ ] Also try **מצב אוטומטי** (Auto mode): does the live frame catch the page, and does auto-capture work?
+- [ ] For each one: take the photo with the **צלם** (Capture) button (manual mode, the default). The camera stays open, so you can capture several pages in a row. When you're done, tap **סיום** (Done) and go through all the pages one after another. Were the corners detected correctly? How many manual corrections were needed?
+- [ ] Also try **מצב אוטומטי** (Auto mode): does the live frame catch the page, and does auto-capture work? After each capture it waits for you to switch to the next page.
+- [ ] **בחר תמונות מהגלריה** (Choose images from gallery): select several images at once. Can you pick more than one, and do they all come up for editing one after another?
 - [ ] Dragging corners: does the magnifier help you place them precisely?
 - [ ] Try all three filters. Which one looks best?
-- [ ] A 2–3 page document → **סיימתי** (Done) → **שתף** (Share): do WhatsApp and Gmail appear in the share sheet, and does the file arrive intact?
+- [ ] In the page list (after the last page): tap a page to edit it again, and try **מחק עמוד** (Delete page) and **+ צלם עוד עמודים** (Capture more pages).
+- [ ] A 2–3 page document → **צור PDF** (Create PDF) → **שתף** (Share): do WhatsApp and Gmail appear in the share sheet, and does the file arrive intact?
 
 **2. Text recognition** (requires sign-in)
 
