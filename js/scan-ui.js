@@ -90,6 +90,9 @@ export function initScan() {
 
   setupCropPointer();
   window.addEventListener('resize', () => { if (!$('#scan-crop').hidden) drawCrop(); });
+  // סיבוב הטלפון משנה את המקום הפנוי ואת מידות הווידאו
+  new ResizeObserver(fitVideo).observe($('.cam-stage'));
+  $('#video').addEventListener('resize', fitVideo);
 }
 
 function toCanvas(src) {
@@ -121,9 +124,20 @@ async function openCamera() {
   detectTimes = [];
   capturing = false;
   step('camera');
+  fitVideo();
   const s = stream.getVideoTracks()[0].getSettings();
   report('פתיחת מצלמה', true, `${s.width}x${s.height}`);
   setAutoMode(false);
+}
+
+// הווידאו בגודל המקסימלי שנכנס במקום הפנוי, בלי לעוות ובלי לחתוך
+function fitVideo() {
+  const v = $('#video');
+  const stage = $('.cam-stage');
+  if (!v.videoWidth || $('#scan-camera').hidden) return;
+  const k = Math.min(stage.clientWidth / v.videoWidth, stage.clientHeight / v.videoHeight);
+  v.style.width = `${Math.floor(v.videoWidth * k)}px`;
+  v.style.height = `${Math.floor(v.videoHeight * k)}px`;
 }
 
 // מצב ידני (ברירת מחדל): המשתמש לוחץ "צלם", והזיהוי קורה רק אחרי הצילום.
@@ -135,7 +149,7 @@ function setAutoMode(on) {
   stableSince = 0;
   const ov = $('#overlay');
   ov.getContext('2d').clearRect(0, 0, ov.width, ov.height);
-  $('#btn-auto-mode').textContent = on ? 'מעבר לצילום ידני' : 'מעבר לזיהוי אוטומטי';
+  $('#btn-auto-mode').textContent = on ? 'מצב ידני' : 'מצב אוטומטי';
   $('#det-stat').textContent = on ? 'מחפש דף…' : 'כוון את המצלמה אל המסמך ולחץ "צלם"';
   if (on) tick();
 }

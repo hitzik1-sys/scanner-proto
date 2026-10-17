@@ -61,7 +61,7 @@ Open the site in Chrome. Recommended: menu ⋮ → **Add to Home screen**.
 
 - [ ] Scan 3–4 real documents: a page on a dark table, a page on a light table, a small crumpled receipt, a page in dim light.
 - [ ] For each one: take the photo with the **צלם** (Capture) button (manual mode, the default). Were the corners detected correctly after the photo? How many manual corrections were needed?
-- [ ] Also try **מעבר לזיהוי אוטומטי** (Switch to auto detection): does the live frame catch the page, and does auto-capture work?
+- [ ] Also try **מצב אוטומטי** (Auto mode): does the live frame catch the page, and does auto-capture work?
 - [ ] Dragging corners: does the magnifier help you place them precisely?
 - [ ] Try all three filters. Which one looks best?
 - [ ] A 2–3 page document → **סיימתי** (Done) → **שתף** (Share): do WhatsApp and Gmail appear in the share sheet, and does the file arrive intact?
