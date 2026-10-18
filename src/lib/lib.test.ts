@@ -61,8 +61,20 @@ describe('file names', () => {
     expect(dateStamp(d)).toBe('20261007');
   });
 
-  it('builds YYYYMMDD_text.pdf', () => {
-    expect(pdfFileName('חשבון חשמל', d)).toBe('20261007_חשבון חשמל.pdf');
+  it('builds YYYYMMDD_text.pdf with underscores instead of spaces', () => {
+    expect(pdfFileName('חשבון חשמל', d)).toBe('20261007_חשבון_חשמל.pdf');
+  });
+
+  it('turns a run of spaces into a single underscore', () => {
+    expect(pdfFileName('חשבון    חשמל   ספטמבר', d)).toBe('20261007_חשבון_חשמל_ספטמבר.pdf');
+  });
+
+  it('does not stack underscores the user typed next to spaces', () => {
+    expect(pdfFileName('חשבון _ חשמל__2026', d)).toBe('20261007_חשבון_חשמל_2026.pdf');
+  });
+
+  it('drops leading and trailing spaces', () => {
+    expect(pdfFileName('  חשבון חשמל  ', d)).toBe('20261007_חשבון_חשמל.pdf');
   });
 
   it('falls back to "סריקה" when there is no text', () => {
@@ -70,7 +82,7 @@ describe('file names', () => {
   });
 
   it('removes characters that are not allowed in file names', () => {
-    expect(pdfFileName('ביטוח/רכב: 2026?', d)).toBe('20261007_ביטוח רכב 2026.pdf');
+    expect(pdfFileName('ביטוח/רכב: 2026?', d)).toBe('20261007_ביטוח_רכב_2026.pdf');
   });
 });
 

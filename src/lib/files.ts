@@ -7,15 +7,17 @@ export function dateStamp(d = new Date()): string {
 }
 
 /**
- * שם קובץ בפורמט YYYYMMDD_טקסט.pdf.
- * מסיר תווים שאסורים בשמות קבצים, ומשתמש ב"סריקה" כשאין טקסט.
+ * שם קובץ בפורמט YYYYMMDD_טקסט.pdf, למשל 20261017_חשבון_חשמל.pdf.
+ * תווים שאסורים בשמות קבצים מוסרים, וכל רצף של רווחים (או קווים תחתונים)
+ * הופך לקו תחתון אחד. כשאין טקסט, השם הוא "סריקה".
  */
 export function pdfFileName(title: string, d = new Date()): string {
   const clean = title
     .replace(/[\\/:*?"<>|\u0000-\u001f]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 80);
+    .replace(/[\s_]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 80)
+    .replace(/_+$/, '');
   return `${dateStamp(d)}_${clean || 'סריקה'}.pdf`;
 }
 
