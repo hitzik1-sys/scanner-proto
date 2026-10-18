@@ -17,7 +17,7 @@ export interface Page {
   thumb: string | null;
 }
 
-export type Screen = 'home' | 'camera' | 'edit' | 'review' | 'done';
+export type Screen = 'home' | 'camera' | 'edit' | 'review' | 'done' | 'settings';
 
 /** איזה עמוד נערך עכשיו, ועד איפה ממשיכים ברצף */
 export interface EditState {

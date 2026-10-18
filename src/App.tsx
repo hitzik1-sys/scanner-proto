@@ -8,7 +8,8 @@ import Home from './screens/Home';
 import Camera from './screens/Camera';
 import EditPage from './screens/EditPage';
 import Review from './screens/Review';
-import Done from './screens/Done';
+import SaveSend from './screens/SaveSend';
+import SettingsScreen from './screens/SettingsScreen';
 
 let nextId = 1;
 const newPage = (blob: Blob): Page => ({
@@ -34,6 +35,14 @@ export default function App() {
   const [cvStatus, setCvStatus] = useState<CvStatus>('loading');
   // מאיזה עמוד התחיל הצילום הנוכחי
   const camStart = useRef(0);
+  // לאן חוזרים מההגדרות
+  const beforeSettings = useRef<Screen>('home');
+
+  const openSettings = () => {
+    beforeSettings.current = screen;
+    setScreen('settings');
+    window.scrollTo(0, 0);
+  };
 
   const startOpenCV = () => {
     setCvStatus('loading');
@@ -123,8 +132,15 @@ export default function App() {
       {screen !== 'camera' && (
         <header className="top">
           <h1>{t('app.title')}</h1>
+          {screen !== 'settings' && screen !== 'edit' && (
+            <button className="icon-button" onClick={openSettings} aria-label={t('settings.title')}>
+              ⚙
+            </button>
+          )}
         </header>
       )}
+
+      {screen === 'settings' && <SettingsScreen onBack={() => setScreen(beforeSettings.current)} />}
 
       {screen === 'home' && (
         <Home cvStatus={cvStatus} onRetry={startOpenCV} onCamera={openCamera} onFiles={addAndEdit} />
@@ -160,7 +176,14 @@ export default function App() {
       )}
 
       {screen === 'done' && pdf && (
-        <Done pdf={pdf} pages={pages} onEdit={() => setScreen('review')} onNew={reset} />
+        <SaveSend
+          pdf={pdf}
+          pages={pages}
+          title={title}
+          onEdit={() => setScreen('review')}
+          onNew={reset}
+          onSettings={openSettings}
+        />
       )}
     </div>
   );

@@ -8,6 +8,7 @@
   --accent-soft: #e3ecfa;
   --warn: #9a6700;
   --danger: #c62828;
+  --ok: #1a7f37;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -21,6 +22,7 @@
     --accent-soft: #1d2b44;
     --warn: #e3b341;
     --danger: #ff6b6b;
+    --ok: #4cc26a;
   }
 }
 
@@ -106,6 +108,52 @@ input {
 .crop-canvas { display: block; margin: 0 auto; touch-action: none; border-radius: 8px; max-width: 100%; }
 .preview { min-height: 120px; }
 .preview canvas { display: block; max-width: 100%; max-height: 58vh; margin: 0 auto; border: 1px solid var(--line); background: #fff; }
+
+/* ===== כותרת עם כפתור הגדרות ===== */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.icon-button { min-height: 40px; min-width: 40px; padding: 4px 8px; font-size: 22px; line-height: 1; background: none; border: 0; color: var(--quiet); }
+
+/* ===== כרטיסים, תגיות, אנשי קשר ===== */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 12px 0; }
+.card h3 { font-size: 15px; margin: 2px 0 8px; }
+.card .hint { font-size: 14px; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 40px; cursor: pointer; }
+.check input { width: 20px; height: 20px; min-height: 0; margin: 0; flex: none; accent-color: var(--accent); }
+textarea {
+  font: inherit; color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; resize: vertical;
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 4px 12px;
+  border-radius: 18px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 15px;
+}
+.chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.chip-x { min-height: 0; padding: 0 2px; border: 0; background: none; color: inherit; font-size: 18px; line-height: 1; }
+.inline-add { display: flex; gap: 8px; }
+.inline-add input { flex: 1; min-width: 0; }
+
+.contact-list, .recipient-list, .steps { list-style: none; padding: 0; margin: 0; }
+.contact-list li, .recipient-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 0; border-top: 1px solid var(--line); }
+.contact-list li:first-child, .recipient-list li:first-child { border-top: 0; }
+.contact-main { display: flex; flex-direction: column; min-width: 0; }
+.contact-tags { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; color: var(--quiet); }
+.contact-actions { display: flex; gap: 6px; }
+.contact-actions button { min-height: 38px; padding: 6px 10px; font-size: 14px; }
+.badge { padding: 0 8px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); }
+.contact-form { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 4px; }
+
+.channels { display: flex; gap: 6px; }
+.channel { min-height: 36px; padding: 4px 10px; font-size: 14px; border-radius: 18px; }
+.channel.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+.steps { margin: 12px 0; }
+.steps li { padding: 6px 0; font-size: 15px; }
+.steps li.ok { color: var(--ok, #1a7f37); }
+.steps li.fail { color: var(--danger); }
+.steps li.pending { color: var(--quiet); }
+.whatsapp-box { border-color: #25d366; }
 
 /* ===== תמונות קטנות של העמודים ===== */
 .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
