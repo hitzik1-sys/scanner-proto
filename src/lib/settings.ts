@@ -40,7 +40,7 @@ export const DEFAULT_SETTINGS: Settings = {
   quickTags: ['חשבונות', 'בריאות', 'ביטוח', 'רכב', 'לימודים'],
   contacts: [],
   emailSubject: 'מסמך: {name}',
-  emailBody: 'מצורף מסמך שנסרק.\n\nנשלח מהסורק מסמכים של המשפחה.',
+  emailBody: 'מצורף מסמך שנסרק.\n\nנשלח מסורק מסמכים.',
 };
 
 const KEY = 'settings';

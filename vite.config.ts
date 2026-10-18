@@ -13,7 +13,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'הסורק מסמכים של המשפחה',
+        name: 'סורק מסמכים',
         short_name: 'סורק',
         lang: 'he',
         dir: 'rtl',
