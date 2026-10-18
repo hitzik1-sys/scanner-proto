@@ -1,7 +1,7 @@
 // @vitest-environment node
 // (ה-Blob של jsdom חסר arrayBuffer, שקיים בכל דפדפן אמיתי וב-Node)
 import { describe, expect, it } from 'vitest';
-import { buildMimeMessage, encodeFilenameParam, encodeHeader, isValidEmail, wrap76 } from './mime';
+import { buildMimeMessage, encodeFilenameParam, encodeHeader, isValidEmail, toBase64Url, wrap76 } from './mime';
 import { addToIndex, emptyIndex, normalizeTags, type IndexDoc } from './docIndex';
 import { DEFAULT_SETTINGS, fillTemplate, newerSettings, normalizeSettings } from './settings';
 import { tagsDescription } from '../google/drive';
@@ -21,6 +21,19 @@ describe('email (MIME)', () => {
     expect(encodeFilenameParam('20261019_חשבון_חשמל.pdf')).toBe(
       `filename*=UTF-8''${encodeURIComponent('20261019_חשבון_חשמל.pdf')}`,
     );
+  });
+
+  it('encodes the whole message as base64url for Gmail (no + / or = padding)', async () => {
+    const mime = await buildMimeMessage({
+      to: ['a@example.com'],
+      subject: 'מסמך',
+      body: 'שלום ~~~ ???',
+      attachment: { name: 'a.pdf', blob: new Blob([new Uint8Array([0xfb, 0xff, 0xfe])], { type: 'application/pdf' }) },
+    });
+    const raw = toBase64Url(mime);
+    expect(raw).toMatch(/^[A-Za-z0-9_-]+$/);
+    const back = raw.replace(/-/g, '+').replace(/_/g, '/');
+    expect(decodeB64Utf8(back + '='.repeat((4 - (back.length % 4)) % 4))).toBe(mime);
   });
 
   it('wraps long base64 into lines of 76 characters', () => {

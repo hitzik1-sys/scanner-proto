@@ -21,6 +21,14 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
+/**
+ * ההודעה כולה בקידוד base64url, כמו ששדה raw של Gmail דורש.
+ * ההודעה עצמה ASCII בלבד (כל העברית בה כבר מקודדת), אבל מקודדים כ-UTF-8 ליתר ביטחון.
+ */
+export function toBase64Url(text: string): string {
+  return utf8ToBase64(text).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 /** שורות של 76 תווים לכל היותר, כמו שתקן המייל דורש */
 export function wrap76(b64: string): string {
   return b64.replace(/.{1,76}/g, '$&\r\n').trimEnd();

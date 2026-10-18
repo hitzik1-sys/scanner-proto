@@ -117,6 +117,8 @@
 
 ## מלכודות ידועות
 
+- **שליחת מייל:** לא להשתמש בנקודת ההעלאה של Gmail (`upload/gmail/v1/.../send`). היא שולחת את המייל, אבל התשובה חוזרת בלי CORS, והדפדפן מדווח "Failed to fetch" על מייל שנשלח (נבדק בטלפון 2026-10-19). משתמשים ב־`gmail/v1/users/me/messages/send` עם `{ raw: base64url }`. ההעלאה ל־Drive (`upload/drive/v3`) כן מחזירה CORS תקין.
+
 - **git ב־Windows PowerShell 5.1:** הודעת commit עם מרכאות כפולות (`"`) נשברת כשמעבירים אותה ב־`-m`. כותבים את ההודעה לקובץ קצר בתוך `.git` (למשל `.git/MSG.txt`), `git commit -F .git/MSG.txt`, ומוחקים. נתיב ארוך מדי לקובץ גורם ל־"Filename too long". ו־`git add` עם נתיב אחד שגוי מבטל את כל ההוספה, אז לבדוק `git status` לפני commit.
 
 - האובייקט `cv` של OpenCV.js מכיל `then`. לא להעביר אותו ל־`resolve()` ולא לעשות לו `await` (לולאה אינסופית). להשתמש תמיד ב־`window.cv`.
