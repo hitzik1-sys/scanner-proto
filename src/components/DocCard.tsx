@@ -108,18 +108,18 @@ export default function DocCard({ doc, snippet, advanced = false, onSettings }: 
         <span className="doc-actions">
           {advanced && (
             <button
-              className="small"
+              className={open ? 'small active' : 'small'}
               aria-expanded={open}
               onClick={() => {
                 setOpen(!open);
                 setSharing(false);
               }}
             >
-              {open ? t('doc.close') : t('doc.details')}
+              {open ? t('doc.closeDetails') : t('doc.details')}
             </button>
           )}
-          <button className="small" aria-expanded={sharing} onClick={toggleShare}>
-            {sharing ? t('doc.close') : t('share.button')}
+          <button className={sharing ? 'small active' : 'small'} aria-expanded={sharing} onClick={toggleShare}>
+            {sharing ? t('doc.closeShare') : t('share.button')}
           </button>
           <a className="button small" href={driveViewUrl(doc.id)} target="_blank" rel="noopener">
             {t('search.open')}
