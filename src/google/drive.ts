@@ -137,6 +137,24 @@ export async function recognizeText(fileId: string, name: string): Promise<strin
   }
 }
 
+/** שינוי שם ותיאור (תגיות) של קובץ בדרייב */
+export async function updateFileMeta(fileId: string, meta: { name?: string; description?: string }): Promise<void> {
+  await googleFetch(`${API}files/${fileId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(meta),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/** העברה לאשפה של הדרייב (אפשר לשחזר משם 30 יום). לא מחיקה סופית */
+export async function trashFile(fileId: string): Promise<void> {
+  await googleFetch(`${API}files/${fileId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ trashed: true }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 export function driveViewUrl(fileId: string): string {
   return `https://drive.google.com/file/d/${fileId}/view`;
 }

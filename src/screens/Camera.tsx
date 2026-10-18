@@ -9,6 +9,10 @@ interface Props {
   shotCount: number;
   onShot: (blob: Blob) => void;
   onDone: () => void;
+  /** לפתוח במצב אוטומטי (הגדרה ברמה המתקדמת) */
+  startAuto?: boolean;
+  /** רמה מתקדמת: כפתור פלאש, כשהטלפון תומך */
+  advanced?: boolean;
 }
 
 const STABLE_MS = 1500;
@@ -19,7 +23,7 @@ const TICK_MS = 150;
  * מצב אוטומטי: זיהוי חי של הדף וצילום כשהוא יציב.
  * המצלמה נשארת פתוחה אחרי כל צילום, כדי לצלם את כל העמודים ברצף.
  */
-export default function Camera({ shotCount, onShot, onDone }: Props) {
+export default function Camera({ shotCount, onShot, onDone, startAuto = false, advanced = false }: Props) {
   const { t } = useTranslation();
   const stageRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -30,7 +34,10 @@ export default function Camera({ shotCount, onShot, onDone }: Props) {
   onShotRef.current = onShot;
 
   const [error, setError] = useState(false);
-  const [auto, setAuto] = useState(false);
+  const [auto, setAuto] = useState(startAuto);
+  // פלאש: רק בדפדפנים שמאפשרים להדליק אותו (Chrome באנדרואיד כן, אייפון לא)
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torch, setTorch] = useState(false);
   const autoRef = useRef(auto);
   autoRef.current = auto;
   const [status, setStatus] = useState('');
@@ -65,6 +72,8 @@ export default function Camera({ shotCount, onShot, onDone }: Props) {
         v.srcObject = s;
         await v.play();
         fitVideo();
+        const caps = s.getVideoTracks()[0].getCapabilities?.() as { torch?: boolean } | undefined;
+        setTorchSupported(!!caps?.torch);
       } catch {
         if (!cancelled) setError(true);
       }
@@ -176,6 +185,17 @@ export default function Camera({ shotCount, onShot, onDone }: Props) {
     return () => clearTimeout(timer);
   }, [auto, t]);
 
+  const toggleTorch = async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: !torch } as MediaTrackConstraintSet] });
+      setTorch(!torch);
+    } catch {
+      setTorchSupported(false);
+    }
+  };
+
   const toggleAuto = () => {
     setStatus('');
     setAuto((a) => !a);
@@ -205,6 +225,11 @@ export default function Camera({ shotCount, onShot, onDone }: Props) {
           <button onClick={toggleAuto} disabled={error}>
             {auto ? t('camera.manual') : t('camera.auto')}
           </button>
+          {advanced && torchSupported && (
+            <button onClick={() => void toggleTorch()} aria-pressed={torch} className={torch ? 'on' : ''}>
+              {torch ? t('camera.flashOff') : t('camera.flashOn')}
+            </button>
+          )}
           <button onClick={onDone}>{shotCount > 0 ? t('camera.done', { count: shotCount }) : t('camera.cancel')}</button>
         </div>
       </div>

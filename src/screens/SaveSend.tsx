@@ -5,7 +5,7 @@ import { getToken, savedUser } from '../google/auth';
 import { ensureFolder, recordInIndex, uploadPdf } from '../google/drive';
 import { sendMail } from '../google/gmail';
 import { normalizeTags, type IndexDoc } from '../lib/docIndex';
-import { downloadBlob, kb, localDate, shareFile } from '../lib/files';
+import { downloadBlob, kb, shareFile } from '../lib/files';
 import { addToLibrary } from '../library';
 import { fillTemplate } from '../lib/settings';
 import type { Page, PdfResult } from '../types';
@@ -14,6 +14,8 @@ interface Props {
   pdf: PdfResult;
   pages: Page[];
   title: string;
+  /** YYYY-MM-DD: תאריך המסמך, כמו בשם הקובץ */
+  docDate: string;
   onEdit: () => void;
   onNew: () => void;
   onSettings: () => void;
@@ -28,7 +30,7 @@ interface Choice {
 type StepState = { text: string; ok: boolean | null };
 
 /** "שמור ושלח": שמירה בדרייב עם תגיות, מייל אוטומטי, ותזכורת לוואטסאפ */
-export default function SaveSend({ pdf, pages, title, onEdit, onNew, onSettings }: Props) {
+export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, onSettings }: Props) {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const [tags, setTags] = useState<string[]>([]);
@@ -90,7 +92,7 @@ export default function SaveSend({ pdf, pages, title, onEdit, onNew, onSettings 
           const doc: IndexDoc = {
             id: file.id,
             name: pdf.name,
-            date: localDate(),
+            date: docDate,
             title: title.trim() || t('send.untitled'),
             tags: chosenTags,
             pages: pdf.pages,

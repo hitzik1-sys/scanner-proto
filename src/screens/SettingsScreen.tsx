@@ -60,6 +60,51 @@ export default function SettingsScreen({ onBack }: Props) {
       <h2>{t('settings.title')}</h2>
 
       <section className="card">
+        <h3>{t('settings.level.title')}</h3>
+        <label className="check">
+          <input type="checkbox" checked={settings.advanced} onChange={(e) => update({ advanced: e.target.checked })} />
+          {t('settings.level.advanced')}
+        </label>
+        <p className="hint">{t('settings.level.hint')}</p>
+        {settings.advanced && (
+          <>
+            <div className="field">
+              {t('settings.level.quality')}
+              <div className="segmented" role="radiogroup" aria-label={t('settings.level.quality')}>
+                {(['high', 'medium', 'low'] as const).map((q) => (
+                  <button
+                    key={q}
+                    role="radio"
+                    aria-checked={settings.pdfQuality === q}
+                    className={settings.pdfQuality === q ? 'on' : ''}
+                    onClick={() => update({ pdfQuality: q })}
+                  >
+                    {t(`quality.${q}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              {t('settings.level.camera')}
+              <div className="segmented" role="radiogroup" aria-label={t('settings.level.camera')}>
+                {(['manual', 'auto'] as const).map((m) => (
+                  <button
+                    key={m}
+                    role="radio"
+                    aria-checked={settings.cameraStart === m}
+                    className={settings.cameraStart === m ? 'on' : ''}
+                    onClick={() => update({ cameraStart: m })}
+                  >
+                    {t(`settings.level.camera_${m}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </section>
+
+      <section className="card">
         <h3>{t('settings.google.title')}</h3>
         {user ? (
           <>

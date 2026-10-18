@@ -3,8 +3,9 @@
 
 import { useEffect, useState } from 'react';
 import { hasValidToken, savedUser } from './google/auth';
-import { findFolder, readIndex, recognizeText, updateIndex } from './google/drive';
-import { patchDoc, pendingOcr, type IndexDoc } from './lib/docIndex';
+import { findFolder, readIndex, recognizeText, tagsDescription, trashFile, updateFileMeta, updateIndex } from './google/drive';
+import { patchDoc, pendingOcr, removeFromIndex, type DocIndex, type IndexDoc } from './lib/docIndex';
+import { parseLocalDate, pdfFileName } from './lib/files';
 import { getItem, setItem } from './lib/store';
 
 const KEY = 'library';
@@ -120,6 +121,35 @@ export async function runOcr(): Promise<void> {
   } finally {
     set({ ocrRunning: false });
   }
+}
+
+async function applyIndexChange(change: (i: DocIndex) => DocIndex): Promise<void> {
+  const { folderId, owner } = state;
+  if (!folderId || !owner) throw new Error('הספרייה לא מחוברת לדרייב. לחץ "רענן" בחיפוש.');
+  const index = await updateIndex(folderId, owner, change);
+  set({ docs: index.docs, ocrLeft: index.docs.filter((d) => d.ocrStatus === 'pending').length });
+  await persist();
+}
+
+/**
+ * שינוי שם ותגיות של מסמך: בדרייב (שם הקובץ ותיאור) ובאינדקס.
+ * שם הקובץ נבנה מחדש מהתאריך של המסמך והשם החדש.
+ */
+export async function editDoc(doc: IndexDoc, title: string, tags: string[]): Promise<void> {
+  const name = pdfFileName(title, parseLocalDate(doc.date));
+  await updateFileMeta(doc.id, { name, description: tagsDescription(tags) });
+  await applyIndexChange((i) => patchDoc(i, doc.id, { title: title.trim() || doc.title, tags, name }));
+}
+
+/** מעביר את המסמך לאשפה של הדרייב ומוציא אותו מהאינדקס */
+export async function deleteDoc(doc: IndexDoc): Promise<void> {
+  try {
+    await trashFile(doc.id);
+  } catch (e) {
+    // קובץ שכבר נמחק מהדרייב: רק מוציאים אותו מהאינדקס
+    if (!/^404/.test((e as Error).message)) throw e;
+  }
+  await applyIndexChange((i) => removeFromIndex(i, doc.id));
 }
 
 export function useLibrary(): LibraryState {

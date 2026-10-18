@@ -12,8 +12,15 @@ export interface Contact {
   preselected: boolean;
 }
 
+export type PdfQuality = 'high' | 'medium' | 'low';
+export type CameraStart = 'manual' | 'auto';
+
 export interface Settings {
   updatedAt: string;
+  /** רמה מתקדמת: מציגה אפשרויות נוספות. כבוי = הממשק הפשוט */
+  advanced: boolean;
+  pdfQuality: PdfQuality;
+  cameraStart: CameraStart;
   saveToDrive: boolean;
   driveFolder: string;
   quickTags: string[];
@@ -25,6 +32,9 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   updatedAt: new Date(0).toISOString(),
+  advanced: false,
+  pdfQuality: 'medium',
+  cameraStart: 'manual',
   saveToDrive: true,
   driveFolder: 'מסמכים סרוקים',
   quickTags: ['חשבונות', 'בריאות', 'ביטוח', 'רכב', 'לימודים'],
@@ -39,6 +49,9 @@ const KEY = 'settings';
 export function normalizeSettings(raw: unknown): Settings {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Partial<Settings>;
   const s: Settings = { ...DEFAULT_SETTINGS, ...r };
+  s.advanced = r.advanced === true;
+  if (!['high', 'medium', 'low'].includes(s.pdfQuality)) s.pdfQuality = DEFAULT_SETTINGS.pdfQuality;
+  if (!['manual', 'auto'].includes(s.cameraStart)) s.cameraStart = DEFAULT_SETTINGS.cameraStart;
   s.quickTags = Array.isArray(r.quickTags) ? r.quickTags.filter((t) => typeof t === 'string') : DEFAULT_SETTINGS.quickTags;
   s.contacts = Array.isArray(r.contacts)
     ? r.contacts
@@ -76,6 +89,11 @@ export function newerSettings(local: Settings, remote: Settings | null): 'local'
   const a = Date.parse(local.updatedAt) || 0;
   const b = Date.parse(remote.updatedAt) || 0;
   return a === b ? 'same' : a > b ? 'local' : 'remote';
+}
+
+/** איכות JPEG וגודל מקסימלי לעמוד ב-PDF. נמוכה = קובץ קטן לשליחה מהירה */
+export function pdfQualityParams(q: PdfQuality): { jpeg: number; maxSide: number } {
+  return { high: { jpeg: 0.92, maxSide: 2200 }, medium: { jpeg: 0.82, maxSide: 2200 }, low: { jpeg: 0.6, maxSide: 1400 } }[q];
 }
 
 export function fillTemplate(template: string, name: string): string {

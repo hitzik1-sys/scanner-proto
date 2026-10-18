@@ -180,6 +180,19 @@ a.button { text-decoration: none; }
 .doc-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
 .doc-foot .status { margin: 0; }
 
+/* ===== רמה מתקדמת ===== */
+.thumb-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.move { display: flex; gap: 4px; }
+.move button { min-height: 32px; min-width: 40px; padding: 2px 8px; font-size: 16px; }
+.doc-actions { display: flex; gap: 6px; }
+.doc-details { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 6px; }
+.doc-details h4 { font-size: 14px; margin: 6px 0 4px; }
+.ocr-text {
+  white-space: pre-wrap; font: inherit; font-size: 14px; line-height: 1.6; margin: 0;
+  max-height: 220px; overflow: auto; background: var(--bg); border-radius: 8px; padding: 8px 10px;
+}
+.cam-controls button.on { background: #e3b341; border-color: #e3b341; color: #1b1f24; }
+
 /* ===== תמונות קטנות של העמודים ===== */
 .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
 .thumbs img { display: block; height: 120px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }

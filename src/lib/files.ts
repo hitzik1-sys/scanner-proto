@@ -12,6 +12,21 @@ export function localDate(d = new Date()): string {
   return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6)}`;
 }
 
+/** YYYY-MM-DD → Date בשעון המקומי (בצהריים, כדי שמעבר שעון לא יזיז יום) */
+export function parseLocalDate(isoDate: string): Date {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return new Date(y, m - 1, d, 12);
+}
+
+/** מעביר עמוד ממקום למקום, ומחזיר רשימה חדשה */
+export function moveItem<T>(list: T[], from: number, to: number): T[] {
+  if (to < 0 || to >= list.length || from === to) return list;
+  const out = [...list];
+  const [item] = out.splice(from, 1);
+  out.splice(to, 0, item);
+  return out;
+}
+
 /** תאריך לתצוגה, למשל 19.10.2026 */
 export function displayDate(isoDate: string): string {
   const [y, m, d] = isoDate.split('-').map(Number);
@@ -53,11 +68,33 @@ export function toCanvas(src: CanvasImageSource & { width: number; height: numbe
   return c;
 }
 
+/** תמונה דרך <img>: הדפדפן מסובב לפי נתוני הסיבוב שבתמונה (EXIF) */
+function decodeWithImg(blob: Blob): Promise<HTMLCanvasElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(toCanvas(Object.assign(img, { width: img.naturalWidth, height: img.naturalHeight })));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('לא הצלחתי לקרוא את התמונה'));
+    };
+    img.src = url;
+  });
+}
+
 export async function decodeImage(blob: Blob): Promise<HTMLCanvasElement> {
-  const bmp = await createImageBitmap(blob, { imageOrientation: 'from-image' });
-  const c = toCanvas(bmp);
-  bmp.close();
-  return c;
+  try {
+    const bmp = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+    const c = toCanvas(bmp);
+    bmp.close();
+    return c;
+  } catch {
+    // Safari ישן לא תומך באפשרויות של createImageBitmap
+    return decodeWithImg(blob);
+  }
 }
 
 export function makeThumb(c: HTMLCanvasElement, height = 240): string {

@@ -42,6 +42,10 @@ export function patchDoc(index: DocIndex, id: string, patch: Partial<IndexDoc>, 
   };
 }
 
+export function removeFromIndex(index: DocIndex, id: string, now = new Date()): DocIndex {
+  return { ...index, updatedAt: now.toISOString(), docs: index.docs.filter((d) => d.id !== id) };
+}
+
 /** מסמכים שעוד צריך לזהות בהם טקסט, מהחדש לישן */
 export function pendingOcr(index: DocIndex): IndexDoc[] {
   return index.docs.filter((d) => d.ocrStatus === 'pending');

@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { loadOpenCV, type Filter } from './lib/cv';
 import { buildPdf } from './lib/pdf';
-import { pdfFileName } from './lib/files';
+import { localDate, moveItem, parseLocalDate, pdfFileName } from './lib/files';
+import { pdfQualityParams, type PdfQuality } from './lib/settings';
+import { useSettings } from './SettingsContext';
 import type { EditState, Page, PdfResult, Screen } from './types';
 import Home from './screens/Home';
 import Camera from './screens/Camera';
@@ -27,7 +29,13 @@ export type CvStatus = 'loading' | 'ready' | 'failed';
 
 export default function App() {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const [screen, setScreen] = useState<Screen>('home');
+  // תאריך המסמך (בשם הקובץ ובאינדקס) ואיכות ה-PDF. ניתנים לשינוי ברמה המתקדמת
+  const [docDate, setDocDate] = useState(localDate);
+  // null = לפי ההגדרות. שינוי במסמך הנוכחי לא משנה את ברירת המחדל
+  const [qualityOverride, setQualityOverride] = useState<PdfQuality | null>(null);
+  const quality = qualityOverride ?? settings.pdfQuality;
   const [pages, setPages] = useState<Page[]>([]);
   const [edit, setEdit] = useState<EditState>({ index: 0, seqEnd: 0, single: false });
   const [lastFilter, setLastFilter] = useState<Filter>('gray');
@@ -59,6 +67,8 @@ export default function App() {
     setPages([]);
     setTitle('');
     setPdf(null);
+    setDocDate(localDate());
+    setQualityOverride(null);
     setScreen('home');
   };
 
@@ -121,9 +131,14 @@ export default function App() {
 
   const createPdf = async () => {
     const canvases = pages.map((p) => p.out).filter((c): c is HTMLCanvasElement => !!c);
-    const blob = await buildPdf(canvases);
-    setPdf({ blob, name: pdfFileName(title), pages: canvases.length });
+    const blob = await buildPdf(canvases, pdfQualityParams(quality));
+    setPdf({ blob, name: pdfFileName(title, parseLocalDate(docDate)), pages: canvases.length });
     setScreen('done');
+  };
+
+  const movePage = (from: number, to: number) => {
+    setPages((ps) => moveItem(ps, from, to));
+    setPdf(null);
   };
 
   const page = pages[edit.index];
@@ -160,7 +175,15 @@ export default function App() {
         />
       )}
 
-      {screen === 'camera' && <Camera shotCount={pages.length - camStart.current} onShot={onShot} onDone={onCameraDone} />}
+      {screen === 'camera' && (
+        <Camera
+          shotCount={pages.length - camStart.current}
+          onShot={onShot}
+          onDone={onCameraDone}
+          advanced={settings.advanced}
+          startAuto={settings.advanced && settings.cameraStart === 'auto'}
+        />
+      )}
 
       {screen === 'edit' && page && (
         <EditPage
@@ -186,6 +209,18 @@ export default function App() {
           onMoreCamera={openCamera}
           onMoreFiles={addAndEdit}
           onDiscard={reset}
+          advanced={settings.advanced}
+          docDate={docDate}
+          onDocDate={(d) => {
+            setDocDate(d);
+            setPdf(null);
+          }}
+          quality={quality}
+          onQuality={(q) => {
+            setQualityOverride(q);
+            setPdf(null);
+          }}
+          onMove={movePage}
         />
       )}
 
@@ -194,6 +229,7 @@ export default function App() {
           pdf={pdf}
           pages={pages}
           title={title}
+          docDate={docDate}
           onEdit={() => setScreen('review')}
           onNew={reset}
           onSettings={openSettings}
