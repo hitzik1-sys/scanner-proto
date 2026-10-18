@@ -2,6 +2,8 @@
 
 [עברית](README.md) · English
 
+> **Update:** the app itself now lives at the main address, `https://hitzik1-sys.github.io/scanner-proto/` (stage 1: scanning and sending). The prototype described in this document moved to `https://hitzik1-sys.github.io/scanner-proto/prototype/`. The Google setup instructions (steps B–C) are still valid and will be used in stage 2.
+
 A prototype that tests the three risky parts before full development:
 
 1. **Scanning:** page edge detection, cropping and perspective correction in the browser (OpenCV.js).
