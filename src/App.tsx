@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { loadOpenCV, type Filter } from './lib/cv';
 import { buildPdf } from './lib/pdf';
 import { localDate, moveItem, parseLocalDate, pdfFileName } from './lib/files';
-import { pdfQualityParams, type PdfQuality } from './lib/settings';
+import { applyTheme, pdfQualityParams, type PdfQuality } from './lib/settings';
 import { useSettings } from './SettingsContext';
 import type { EditState, Page, PdfResult, Screen } from './types';
 import Home from './screens/Home';
@@ -48,6 +48,9 @@ export default function App() {
   const camStart = useRef(0);
   // לאן חוזרים מההגדרות
   const beforeSettings = useRef<Screen>('home');
+
+  // לפני הציור, כדי שהמסך לא יהבהב בצבע הלא נכון בפתיחה
+  useLayoutEffect(() => applyTheme(settings.theme), [settings.theme]);
 
   const openSettings = () => {
     beforeSettings.current = screen;

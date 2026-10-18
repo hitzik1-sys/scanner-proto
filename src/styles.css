@@ -11,8 +11,10 @@
   --ok: #1a7f37;
   color-scheme: light dark;
 }
+/* מצב יום / לילה: לפי ההגדרות (data-theme), או לפי הטלפון כשבחרו "אוטומטי" */
+:root[data-theme="light"] { color-scheme: light; }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #15181c;
     --card: #1e2227;
     --ink: #e8eaed;
@@ -23,7 +25,21 @@
     --warn: #e3b341;
     --danger: #ff6b6b;
     --ok: #4cc26a;
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #15181c;
+  --card: #1e2227;
+  --ink: #e8eaed;
+  --quiet: #9aa3ad;
+  --line: #353b43;
+  --accent: #5b9bff;
+  --accent-soft: #1d2b44;
+  --warn: #e3b341;
+  --danger: #ff6b6b;
+  --ok: #4cc26a;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }

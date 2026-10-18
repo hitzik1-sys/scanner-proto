@@ -60,6 +60,24 @@ export default function SettingsScreen({ onBack }: Props) {
       <h2>{t('settings.title')}</h2>
 
       <section className="card">
+        <h3>{t('settings.theme.title')}</h3>
+        <div className="segmented" role="radiogroup" aria-label={t('settings.theme.title')}>
+          {(['light', 'dark', 'system'] as const).map((m) => (
+            <button
+              key={m}
+              role="radio"
+              aria-checked={settings.theme === m}
+              className={settings.theme === m ? 'on' : ''}
+              onClick={() => update({ theme: m })}
+            >
+              {t(`settings.theme.${m}`)}
+            </button>
+          ))}
+        </div>
+        <p className="hint">{t('settings.theme.hint')}</p>
+      </section>
+
+      <section className="card">
         <h3>{t('settings.level.title')}</h3>
         <label className="check">
           <input type="checkbox" checked={settings.advanced} onChange={(e) => update({ advanced: e.target.checked })} />

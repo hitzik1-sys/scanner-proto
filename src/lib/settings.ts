@@ -14,6 +14,8 @@ export interface Contact {
 
 export type PdfQuality = 'high' | 'medium' | 'low';
 export type CameraStart = 'manual' | 'auto';
+/** system = לפי הגדרת הטלפון */
+export type Theme = 'system' | 'light' | 'dark';
 
 export interface Settings {
   updatedAt: string;
@@ -21,6 +23,8 @@ export interface Settings {
   advanced: boolean;
   pdfQuality: PdfQuality;
   cameraStart: CameraStart;
+  /** מצב יום / לילה */
+  theme: Theme;
   saveToDrive: boolean;
   driveFolder: string;
   quickTags: string[];
@@ -35,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
   advanced: false,
   pdfQuality: 'medium',
   cameraStart: 'manual',
+  theme: 'system',
   saveToDrive: true,
   driveFolder: 'מסמכים סרוקים',
   quickTags: ['חשבונות', 'בריאות', 'ביטוח', 'רכב', 'לימודים'],
@@ -52,6 +57,7 @@ export function normalizeSettings(raw: unknown): Settings {
   s.advanced = r.advanced === true;
   if (!['high', 'medium', 'low'].includes(s.pdfQuality)) s.pdfQuality = DEFAULT_SETTINGS.pdfQuality;
   if (!['manual', 'auto'].includes(s.cameraStart)) s.cameraStart = DEFAULT_SETTINGS.cameraStart;
+  if (!['system', 'light', 'dark'].includes(s.theme)) s.theme = DEFAULT_SETTINGS.theme;
   s.quickTags = Array.isArray(r.quickTags) ? r.quickTags.filter((t) => typeof t === 'string') : DEFAULT_SETTINGS.quickTags;
   s.contacts = Array.isArray(r.contacts)
     ? r.contacts
@@ -94,6 +100,12 @@ export function newerSettings(local: Settings, remote: Settings | null): 'local'
 /** איכות JPEG וגודל מקסימלי לעמוד ב-PDF. נמוכה = קובץ קטן לשליחה מהירה */
 export function pdfQualityParams(q: PdfQuality): { jpeg: number; maxSide: number } {
   return { high: { jpeg: 0.92, maxSide: 2200 }, medium: { jpeg: 0.82, maxSide: 2200 }, low: { jpeg: 0.6, maxSide: 1400 } }[q];
+}
+
+/** מחיל את מצב היום / הלילה על הדף (המשתנים ב-styles.css) */
+export function applyTheme(theme: Theme): void {
+  if (theme === 'system') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
 }
 
 export function fillTemplate(template: string, name: string): string {

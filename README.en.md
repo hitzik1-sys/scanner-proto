@@ -201,6 +201,7 @@ It becomes visible to others only if **you** tap "Share for viewing" and type an
 
 ## Notes
 
+- **Day / night mode:** in Settings → **מצב תצוגה** (Display mode): **יום** (Day), **לילה** (Night), or **אוטומטי** (Automatic, follows the phone).
 - On first sign-in, Google shows "Google hasn't verified this app". This is expected for an app in testing mode: click **Continue**.
 - The tests create a folder in Drive named `מסמכים סרוקים (בדיקה)` ("Scanned documents (test)"). You can delete it when you're done.
 - Google applies OCR only to the first 10 pages of a PDF, up to 2MB per file. If that turns out to be limiting, we'll solve it in full development.

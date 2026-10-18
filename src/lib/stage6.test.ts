@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emailRecipients, initialChoices, whatsappRecipients } from '../components/RecipientPicker';
 import { newestScannedFirst } from './search';
-import type { Contact } from './settings';
+import { normalizeSettings, type Contact } from './settings';
 import type { IndexDoc } from './docIndex';
 
 const contacts: Contact[] = [
@@ -64,5 +64,13 @@ describe('home list order', () => {
     const docs = [doc('a', '2026-10-18T09:00:00Z', '2026-10-18'), doc('b', '2026-10-19T09:00:00Z', '2026-10-19')];
     newestScannedFirst(docs);
     expect(docs.map((d) => d.id)).toEqual(['a', 'b']);
+  });
+});
+
+describe('day / night mode', () => {
+  it('defaults to following the phone, and keeps a valid choice', () => {
+    expect(normalizeSettings({}).theme).toBe('system');
+    expect(normalizeSettings({ theme: 'dark' }).theme).toBe('dark');
+    expect(normalizeSettings({ theme: 'purple' }).theme).toBe('system');
   });
 });
