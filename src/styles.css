@@ -155,6 +155,31 @@ textarea {
 .steps li.pending { color: var(--quiet); }
 .whatsapp-box { border-color: #25d366; }
 
+/* ===== חיפוש ורשימת מסמכים ===== */
+.top h1 { flex: 1; }
+.icon-button.back { font-size: 20px; color: var(--ink); }
+.search-input { font-size: 17px; min-height: 50px; margin-bottom: 8px; }
+.filter-chips { margin: 4px 0; }
+.periods { display: flex; width: 100%; margin: 4px 0 8px; }
+.periods button { flex: 1 1 auto; padding: 8px 6px; font-size: 14px; white-space: nowrap; }
+.sync-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0; }
+.sync-bar .status { margin: 0; flex: 1; }
+button.small, .button.small { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+a.button { text-decoration: none; }
+.section-title { font-size: 15px; margin: 22px 0 6px; }
+.empty { margin-top: 24px; text-align: center; }
+
+.doc-list { list-style: none; padding: 0; margin: 6px 0; }
+.doc-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
+.doc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.doc-title { font-size: 16px; overflow-wrap: anywhere; }
+.doc-date { color: var(--quiet); font-size: 13px; white-space: nowrap; }
+.doc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; font-size: 13px; }
+.snippet { margin: 6px 0; font-size: 14px; color: var(--quiet); line-height: 1.6; overflow-wrap: anywhere; }
+.snippet mark { background: #fff1a8; color: #1b1f24; border-radius: 3px; padding: 0 1px; }
+.doc-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
+.doc-foot .status { margin: 0; }
+
 /* ===== תמונות קטנות של העמודים ===== */
 .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
 .thumbs img { display: block; height: 120px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }

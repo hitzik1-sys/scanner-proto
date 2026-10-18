@@ -10,6 +10,7 @@ import EditPage from './screens/EditPage';
 import Review from './screens/Review';
 import SaveSend from './screens/SaveSend';
 import SettingsScreen from './screens/SettingsScreen';
+import Search from './screens/Search';
 
 let nextId = 1;
 const newPage = (blob: Blob): Page => ({
@@ -131,7 +132,12 @@ export default function App() {
     <div className={`app screen-${screen}`}>
       {screen !== 'camera' && (
         <header className="top">
-          <h1>{t('app.title')}</h1>
+          {screen === 'search' ? (
+            <button className="icon-button back" onClick={() => setScreen('home')} aria-label={t('search.back')}>
+              →
+            </button>
+          ) : null}
+          <h1>{screen === 'search' ? t('search.title') : t('app.title')}</h1>
           {screen !== 'settings' && screen !== 'edit' && (
             <button className="icon-button" onClick={openSettings} aria-label={t('settings.title')}>
               ⚙
@@ -140,10 +146,18 @@ export default function App() {
         </header>
       )}
 
+      {screen === 'search' && <Search onSettings={openSettings} />}
+
       {screen === 'settings' && <SettingsScreen onBack={() => setScreen(beforeSettings.current)} />}
 
       {screen === 'home' && (
-        <Home cvStatus={cvStatus} onRetry={startOpenCV} onCamera={openCamera} onFiles={addAndEdit} />
+        <Home
+          cvStatus={cvStatus}
+          onRetry={startOpenCV}
+          onCamera={openCamera}
+          onFiles={addAndEdit}
+          onSearch={() => setScreen('search')}
+        />
       )}
 
       {screen === 'camera' && <Camera shotCount={pages.length - camStart.current} onShot={onShot} onDone={onCameraDone} />}
