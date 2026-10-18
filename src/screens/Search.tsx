@@ -118,7 +118,13 @@ export default function Search({ onSettings }: Props) {
           <p className="status">{t('search.count', { count: results.length })}</p>
           <ul className="doc-list">
             {results.map((r) => (
-              <DocCard key={r.doc.id} doc={r.doc} snippet={r.snippet} advanced={settings.advanced} />
+              <DocCard
+                key={r.doc.id}
+                doc={r.doc}
+                snippet={r.snippet}
+                advanced={settings.advanced}
+                onSettings={onSettings}
+              />
             ))}
           </ul>
         </>

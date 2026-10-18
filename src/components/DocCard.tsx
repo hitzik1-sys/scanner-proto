@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getToken } from '../google/auth';
-import { driveViewUrl } from '../google/drive';
+import { downloadFile, driveViewUrl } from '../google/drive';
 import { normalizeTags, type IndexDoc } from '../lib/docIndex';
 import { displayDate } from '../lib/files';
 import type { Snippet } from '../lib/search';
 import { deleteDoc, editDoc } from '../library';
+import ShareDoc from './ShareDoc';
 
 interface Props {
   doc: IndexDoc;
   snippet?: Snippet | null;
   /** רמה מתקדמת: כפתור "פרטים" עם הטקסט שזוהה, עריכה ומחיקה */
   advanced?: boolean;
+  onSettings?: () => void;
 }
 
 /** קטע מהטקסט, עם המילים שנמצאו מסומנות */
@@ -28,9 +30,28 @@ function SnippetText({ snippet }: { snippet: Snippet }) {
 }
 
 /** מסמך ברשימה: שם, תאריך, תגיות, קטע מהטקסט, וכפתור פתיחה בדרייב */
-export default function DocCard({ doc, snippet, advanced = false }: Props) {
+export default function DocCard({ doc, snippet, advanced = false, onSettings }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [blob, setBlob] = useState<Blob | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // הורדה מהדרייב מתחילה מיד בלחיצה (גם ההתחברות, אם צריך), כדי שהקובץ יהיה מוכן
+  // כשבוחרים נמענים: חלון השיתוף של הטלפון נפתח רק מתוך לחיצה, לא אחרי המתנה ארוכה
+  const toggleShare = () => {
+    if (sharing) {
+      setSharing(false);
+      return;
+    }
+    setSharing(true);
+    setOpen(false);
+    if (blob) return;
+    setLoadError(null);
+    getToken()
+      .then(() => downloadFile(doc.id))
+      .then(setBlob, (e: Error) => setLoadError(e.message));
+  };
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(doc.title);
   const [tagsText, setTagsText] = useState(doc.tags.join(', '));
@@ -86,15 +107,27 @@ export default function DocCard({ doc, snippet, advanced = false }: Props) {
         </span>
         <span className="doc-actions">
           {advanced && (
-            <button className="small" aria-expanded={open} onClick={() => setOpen(!open)}>
+            <button
+              className="small"
+              aria-expanded={open}
+              onClick={() => {
+                setOpen(!open);
+                setSharing(false);
+              }}
+            >
               {open ? t('doc.close') : t('doc.details')}
             </button>
           )}
+          <button className="small" aria-expanded={sharing} onClick={toggleShare}>
+            {sharing ? t('doc.close') : t('share.button')}
+          </button>
           <a className="button small" href={driveViewUrl(doc.id)} target="_blank" rel="noopener">
             {t('search.open')}
           </a>
         </span>
       </div>
+
+      {sharing && <ShareDoc doc={doc} blob={blob} loadError={loadError} onSettings={onSettings} />}
 
       {advanced && open && (
         <div className="doc-details">

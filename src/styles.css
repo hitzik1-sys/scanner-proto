@@ -193,6 +193,18 @@ a.button { text-decoration: none; }
 }
 .cam-controls button.on { background: #e3b341; border-color: #e3b341; color: #1b1f24; }
 
+/* ===== מסך ראשי, שיתוף מסמך ===== */
+.home-button { color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
+.continue-box { border-color: var(--accent); background: var(--accent-soft); }
+.continue-box p { margin: 0 0 4px; font-weight: 600; }
+.continue-box .buttons { margin: 6px 0 0; }
+.load-more { display: flex; justify-content: center; padding: 8px 0 16px; }
+.sent-badge { font-size: 12px; color: var(--ok); font-weight: 600; margin-inline-start: 6px; }
+.share-doc { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 6px; }
+.share-doc h4 { font-size: 14px; margin: 6px 0 4px; }
+.share-doc .buttons { margin: 8px 0 2px; }
+.share-doc .card { margin: 8px 0; }
+
 /* ===== תמונות קטנות של העמודים ===== */
 .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
 .thumbs img { display: block; height: 120px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }

@@ -150,6 +150,11 @@ export function searchDocs(docs: IndexDoc[], query: string, filters: SearchFilte
   return results.sort((a, b) => b.score - a.score || byDate(a, b));
 }
 
+/** מהמסמך שנסרק אחרון לראשון (לפי זמן השמירה, לא לפי התאריך שבשם) */
+export function newestScannedFirst<T extends IndexDoc>(docs: T[]): T[] {
+  return [...docs].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 /** כל התגיות שמופיעות במסמכים, מהנפוצה לנדירה */
 export function allTags(docs: IndexDoc[]): string[] {
   const count = new Map<string, number>();

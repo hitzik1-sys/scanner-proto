@@ -42,6 +42,8 @@ export default function App() {
   const [title, setTitle] = useState('');
   const [pdf, setPdf] = useState<PdfResult | null>(null);
   const [cvStatus, setCvStatus] = useState<CvStatus>('loading');
+  // המסמך נשלח או נשמר: חזרה למסך הראשי מתחילה סריקה חדשה
+  const [docFinished, setDocFinished] = useState(false);
   // מאיזה עמוד התחיל הצילום הנוכחי
   const camStart = useRef(0);
   // לאן חוזרים מההגדרות
@@ -69,7 +71,24 @@ export default function App() {
     setPdf(null);
     setDocDate(localDate());
     setQualityOverride(null);
+    setDocFinished(false);
     setScreen('home');
+  };
+
+  /** מסך ראשי מכל מקום. סריקה שעוד לא נשלחה נשמרת, ואפשר להמשיך אותה מהמסך הראשי */
+  const goHome = () => {
+    if (docFinished) reset();
+    else setScreen('home');
+    window.scrollTo(0, 0);
+  };
+
+  /** המשך סריקה: לעמוד הראשון שעוד לא נערך, או לרשימת העמודים / למסך השליחה */
+  const continueScan = () => {
+    const firstUnedited = pages.findIndex((p) => !p.out);
+    if (firstUnedited >= 0) {
+      setEdit({ index: firstUnedited, seqEnd: pages.length, single: false });
+      setScreen('edit');
+    } else setScreen(pdf ? 'done' : 'review');
   };
 
   /** מוסיף עמודים לסוף המסמך ומתחיל לערוך אותם, אחד אחרי השני */
@@ -147,11 +166,13 @@ export default function App() {
     <div className={`app screen-${screen}`}>
       {screen !== 'camera' && (
         <header className="top">
-          {screen === 'search' ? (
-            <button className="icon-button back" onClick={() => setScreen('home')} aria-label={t('search.back')}>
-              →
+          {screen !== 'home' && (
+            <button className="icon-button home-button" onClick={goHome} aria-label={t('app.home')} title={t('app.home')}>
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                <path d="M3 11.5 12 4l9 7.5M5.5 9.5V20h5v-6h3v6h5V9.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+              </svg>
             </button>
-          ) : null}
+          )}
           <h1>{screen === 'search' ? t('search.title') : t('app.title')}</h1>
           {screen !== 'settings' && screen !== 'edit' && (
             <button className="icon-button" onClick={openSettings} aria-label={t('settings.title')}>
@@ -172,6 +193,10 @@ export default function App() {
           onCamera={openCamera}
           onFiles={addAndEdit}
           onSearch={() => setScreen('search')}
+          onSettings={openSettings}
+          pendingPages={docFinished ? 0 : pages.length}
+          onContinue={continueScan}
+          onDiscard={reset}
         />
       )}
 
@@ -233,6 +258,7 @@ export default function App() {
           onEdit={() => setScreen('review')}
           onNew={reset}
           onSettings={openSettings}
+          onFinished={() => setDocFinished(true)}
         />
       )}
     </div>

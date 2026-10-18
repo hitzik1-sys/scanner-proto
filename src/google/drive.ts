@@ -137,6 +137,13 @@ export async function recognizeText(fileId: string, name: string): Promise<strin
   }
 }
 
+/** מוריד קובץ מהדרייב (רק קבצים שהאפליקציה יצרה, בגלל הרשאת drive.file) */
+export async function downloadFile(fileId: string): Promise<Blob> {
+  const r = await googleFetch(`${API}files/${fileId}?alt=media`);
+  const blob = await r.blob();
+  return blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' });
+}
+
 /** שינוי שם ותיאור (תגיות) של קובץ בדרייב */
 export async function updateFileMeta(fileId: string, meta: { name?: string; description?: string }): Promise<void> {
   await googleFetch(`${API}files/${fileId}`, {

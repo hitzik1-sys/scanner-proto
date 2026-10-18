@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../SettingsContext';
+import RecipientPicker, {
+  emailRecipients,
+  initialChoices,
+  whatsappRecipients,
+  type Choices,
+} from '../components/RecipientPicker';
 import { getToken, savedUser } from '../google/auth';
 import { ensureFolder, recordInIndex, uploadPdf } from '../google/drive';
 import { sendMail } from '../google/gmail';
@@ -19,28 +25,26 @@ interface Props {
   onEdit: () => void;
   onNew: () => void;
   onSettings: () => void;
-}
-
-interface Choice {
-  selected: boolean;
-  email: boolean;
-  whatsapp: boolean;
+  /** נקרא אחרי שליחה ראשונה, כדי שחזרה למסך הראשי תתחיל סריקה חדשה */
+  onFinished: () => void;
 }
 
 type StepState = { text: string; ok: boolean | null };
 
-/** "שמור ושלח": שמירה בדרייב עם תגיות, מייל אוטומטי, ותזכורת לוואטסאפ */
-export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, onSettings }: Props) {
+/**
+ * "שמור ושלח": שמירה בדרייב עם תגיות, מייל אוטומטי ותזכורת לוואטסאפ.
+ * אחרי השליחה אפשר לשלוח לעוד נמענים (בלי לשמור שוב בדרייב).
+ */
+export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, onSettings, onFinished }: Props) {
   const { t } = useTranslation();
   const { settings } = useSettings();
+  const contacts = settings.contacts;
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
   const [toDrive, setToDrive] = useState(settings.saveToDrive);
-  const [choices, setChoices] = useState<Record<string, Choice>>(() =>
-    Object.fromEntries(
-      settings.contacts.map((c) => [c.id, { selected: c.preselected, email: !!c.email, whatsapp: c.whatsapp }]),
-    ),
-  );
+  const [savedToDrive, setSavedToDrive] = useState(false);
+  const [choices, setChoices] = useState<Choices>(() => initialChoices(contacts, true));
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [steps, setSteps] = useState<StepState[]>([]);
   const [finished, setFinished] = useState(false);
@@ -49,9 +53,10 @@ export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, on
   const allTags = useMemo(() => normalizeTags([...settings.quickTags, ...tags]), [settings.quickTags, tags]);
   const [chosenTags, setChosenTags] = useState<string[]>([]);
 
-  const emailTo = settings.contacts.filter((c) => choices[c.id]?.selected && choices[c.id].email && c.email);
-  const whatsappTo = settings.contacts.filter((c) => choices[c.id]?.selected && choices[c.id].whatsapp);
-  const nothingToDo = !toDrive && emailTo.length === 0;
+  const emailTo = emailRecipients(contacts, choices);
+  const whatsappTo = whatsappRecipients(contacts, choices);
+  const drive = toDrive && !savedToDrive;
+  const nothingToDo = !drive && emailTo.length === 0;
 
   const toggleTag = (tag: string) =>
     setChosenTags((cur) => (cur.includes(tag) ? cur.filter((x) => x !== tag) : [...cur, tag]));
@@ -64,13 +69,20 @@ export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, on
     setCustomTag('');
   };
 
-  const setChoice = (id: string, patch: Partial<Choice>) =>
-    setChoices((cur) => ({ ...cur, [id]: { ...cur[id], ...patch } }));
+  // תזכורת לוואטסאפ אחרי שמירה ומייל. בוואטסאפ בלבד חלון השיתוף כבר נפתח, אין צורך
+  const [whatsappBox, setWhatsappBox] = useState(false);
+
+  const finish = (showWhatsappBox: boolean) => {
+    setSentIds((cur) => new Set([...cur, ...emailTo.map((c) => c.id), ...whatsappTo.map((c) => c.id)]));
+    setWhatsappBox(showWhatsappBox && whatsappTo.length > 0);
+    setFinished(true);
+    onFinished();
+  };
 
   const run = async () => {
     setBusy(true);
     setMessage(null);
-    const log: StepState[] = [];
+    const log: StepState[] = [...steps];
     const push = (s: StepState) => {
       log.push(s);
       setSteps([...log]);
@@ -84,7 +96,7 @@ export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, on
       await getToken();
       const owner = savedUser()?.email ?? '';
 
-      if (toDrive) {
+      if (drive) {
         push({ text: t('send.step.saving'), ok: null });
         try {
           const folder = await ensureFolder(settings.driveFolder.trim() || 'מסמכים סרוקים');
@@ -103,6 +115,7 @@ export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, on
           await recordInIndex(folder.id, owner, doc);
           // נכנס מיד לחיפוש, וזיהוי הטקסט מתחיל ברקע
           void addToLibrary(doc, folder.id);
+          setSavedToDrive(true);
           replaceLast({ text: t('send.step.saved', { folder: folder.name }), ok: true });
         } catch (e) {
           replaceLast({ text: t('send.step.saveFailed', { message: (e as Error).message }), ok: false });
@@ -124,13 +137,27 @@ export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, on
           replaceLast({ text: t('send.step.emailFailed', { message: (e as Error).message }), ok: false });
         }
       }
-      setFinished(true);
+      finish(true);
     } catch (e) {
       // ההתחברות עצמה נכשלה או בוטלה
       push({ text: t('send.step.authFailed', { message: (e as Error).message }), ok: false });
     } finally {
       setBusy(false);
     }
+  };
+
+  /** וואטסאפ בלבד: אין צורך בגוגל, פותחים ישר את חלון השיתוף */
+  const whatsappOnly = async () => {
+    await share();
+    finish(false);
+  };
+
+  /** סבב נוסף: אף אחד לא מסומן מראש, ובלי שמירה נוספת בדרייב */
+  const sendMore = () => {
+    setChoices(initialChoices(contacts, false));
+    setWhatsappBox(false);
+    setFinished(false);
+    setMessage(null);
   };
 
   const share = async () => {
@@ -154,89 +181,56 @@ export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, on
 
       {!finished && (
         <>
-          <section className="card">
-            <h3>{t('send.tags')}</h3>
-            <div className="chips">
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  className={chosenTags.includes(tag) ? 'chip on' : 'chip'}
-                  aria-pressed={chosenTags.includes(tag)}
-                  onClick={() => toggleTag(tag)}
-                  disabled={busy}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-            <div className="inline-add">
-              <input
-                value={customTag}
-                placeholder={t('send.newTag')}
-                onChange={(e) => setCustomTag(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addCustomTag()}
-                disabled={busy}
-              />
-              <button onClick={addCustomTag} disabled={busy || !customTag.trim()}>
-                {t('settings.tags.add')}
-              </button>
-            </div>
-          </section>
+          {!savedToDrive && (
+            <>
+              <section className="card">
+                <h3>{t('send.tags')}</h3>
+                <div className="chips">
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      className={chosenTags.includes(tag) ? 'chip on' : 'chip'}
+                      aria-pressed={chosenTags.includes(tag)}
+                      onClick={() => toggleTag(tag)}
+                      disabled={busy}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+                <div className="inline-add">
+                  <input
+                    value={customTag}
+                    placeholder={t('send.newTag')}
+                    onChange={(e) => setCustomTag(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addCustomTag()}
+                    disabled={busy}
+                  />
+                  <button onClick={addCustomTag} disabled={busy || !customTag.trim()}>
+                    {t('settings.tags.add')}
+                  </button>
+                </div>
+              </section>
+
+              <section className="card">
+                <label className="check">
+                  <input type="checkbox" checked={toDrive} onChange={(e) => setToDrive(e.target.checked)} disabled={busy} />
+                  {t('send.toDrive', { folder: settings.driveFolder })}
+                </label>
+              </section>
+            </>
+          )}
 
           <section className="card">
-            <label className="check">
-              <input type="checkbox" checked={toDrive} onChange={(e) => setToDrive(e.target.checked)} disabled={busy} />
-              {t('send.toDrive', { folder: settings.driveFolder })}
-            </label>
-          </section>
-
-          <section className="card">
-            <h3>{t('send.recipients')}</h3>
-            {settings.contacts.length === 0 ? (
-              <p className="hint">
-                {t('send.noContacts')}{' '}
-                <button className="link" onClick={onSettings}>
-                  {t('send.addContacts')}
-                </button>
-              </p>
-            ) : (
-              <ul className="recipient-list">
-                {settings.contacts.map((c) => {
-                  const ch = choices[c.id] ?? { selected: false, email: !!c.email, whatsapp: c.whatsapp };
-                  return (
-                    <li key={c.id} className={ch.selected ? 'on' : ''}>
-                      <label className="check">
-                        <input
-                          type="checkbox"
-                          checked={ch.selected}
-                          onChange={(e) => setChoice(c.id, { selected: e.target.checked })}
-                          disabled={busy}
-                        />
-                        {c.name}
-                      </label>
-                      <div className="channels">
-                        <button
-                          className={ch.email ? 'channel on' : 'channel'}
-                          aria-pressed={ch.email}
-                          disabled={busy || !c.email || !ch.selected}
-                          onClick={() => setChoice(c.id, { email: !ch.email })}
-                        >
-                          ✉ {t('send.email')}
-                        </button>
-                        <button
-                          className={ch.whatsapp ? 'channel on' : 'channel'}
-                          aria-pressed={ch.whatsapp}
-                          disabled={busy || !ch.selected}
-                          onClick={() => setChoice(c.id, { whatsapp: !ch.whatsapp })}
-                        >
-                          💬 {t('send.whatsapp')}
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+            <h3>{sentIds.size ? t('send.moreRecipients') : t('send.recipients')}</h3>
+            <RecipientPicker
+              contacts={contacts}
+              choices={choices}
+              onChange={setChoices}
+              disabled={busy}
+              sentIds={sentIds}
+              onSettings={onSettings}
+            />
           </section>
 
           {whatsappTo.length > 0 && (
@@ -248,13 +242,12 @@ export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, on
 
           <div className="buttons col">
             {nothingToDo ? (
-              // רק וואטסאפ: אין צורך בגוגל, פותחים ישר את חלון השיתוף
-              <button className="primary big" onClick={() => void share()} disabled={whatsappTo.length === 0}>
+              <button className="primary big" onClick={() => void whatsappOnly()} disabled={whatsappTo.length === 0}>
                 {t('send.openWhatsapp')}
               </button>
             ) : (
               <button className="primary big" onClick={() => void run()} disabled={busy}>
-                {busy ? t('send.working') : t('send.go')}
+                {busy ? t('send.working') : savedToDrive ? t('send.goMore') : t('send.go')}
               </button>
             )}
           </div>
@@ -271,7 +264,7 @@ export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, on
         </ul>
       )}
 
-      {finished && whatsappTo.length > 0 && (
+      {finished && whatsappBox && (
         <section className="card whatsapp-box">
           <p>
             <strong>{t('send.whatsappTo')}</strong> {whatsappTo.map((c) => c.name).join(', ')}
@@ -286,9 +279,14 @@ export default function SaveSend({ pdf, pages, title, docDate, onEdit, onNew, on
       {message && <p className="status">{message}</p>}
 
       <div className="buttons col">
+        {finished && contacts.length > 0 && (
+          <button className="primary" onClick={sendMore}>
+            {t('send.sendMore')}
+          </button>
+        )}
         <button onClick={() => void share()}>{t('send.shareManually')}</button>
         <button onClick={() => downloadBlob(pdf.blob, pdf.name)}>{t('done.download')}</button>
-        {!finished && <button onClick={onEdit}>{t('done.edit')}</button>}
+        {!finished && !savedToDrive && <button onClick={onEdit}>{t('done.edit')}</button>}
         <button onClick={onNew}>{t('done.new')}</button>
       </div>
     </main>
