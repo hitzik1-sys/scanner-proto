@@ -2,7 +2,7 @@
 
 [עברית](README.md) · English
 
-> **Update:** the app itself now lives at the main address, `https://hitzik1-sys.github.io/scanner-proto/` (stage 1: scanning and sending). The prototype described in this document moved to `https://hitzik1-sys.github.io/scanner-proto/prototype/`. The Google setup instructions (steps B–C) are still valid and will be used in stage 2.
+> **Update:** the app itself now lives at the main address, `https://hitzik1-sys.github.io/scanner-proto/` (stage 1: scanning and sending). The prototype described in this document moved to `https://hitzik1-sys.github.io/scanner-proto/prototype/`. The Google setup instructions (steps B–C) are still valid. **Stage 2 also needs:** enable the **Gmail API** (step B2), and under **Data access** (step B3) also add the `.../auth/drive.appdata` and `.../auth/gmail.send` scopes. In the new app the Google connection values are already set in the code (`src/config.ts`), so there's nothing to fill in.
 
 A prototype that tests the three risky parts before full development:
 
