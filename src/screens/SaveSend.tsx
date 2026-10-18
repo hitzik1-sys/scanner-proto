@@ -4,8 +4,9 @@ import { useSettings } from '../SettingsContext';
 import { getToken, savedUser } from '../google/auth';
 import { ensureFolder, recordInIndex, uploadPdf } from '../google/drive';
 import { sendMail } from '../google/gmail';
-import { normalizeTags } from '../lib/docIndex';
-import { downloadBlob, kb, shareFile } from '../lib/files';
+import { normalizeTags, type IndexDoc } from '../lib/docIndex';
+import { downloadBlob, kb, localDate, shareFile } from '../lib/files';
+import { addToLibrary } from '../library';
 import { fillTemplate } from '../lib/settings';
 import type { Page, PdfResult } from '../types';
 
@@ -86,17 +87,20 @@ export default function SaveSend({ pdf, pages, title, onEdit, onNew, onSettings 
         try {
           const folder = await ensureFolder(settings.driveFolder.trim() || 'מסמכים סרוקים');
           const file = await uploadPdf(folder.id, pdf.blob, pdf.name, chosenTags);
-          await recordInIndex(folder.id, owner, {
+          const doc: IndexDoc = {
             id: file.id,
             name: pdf.name,
-            date: new Date().toISOString().slice(0, 10),
+            date: localDate(),
             title: title.trim() || t('send.untitled'),
             tags: chosenTags,
             pages: pdf.pages,
             ocrText: '',
             ocrStatus: 'pending',
             createdAt: new Date().toISOString(),
-          });
+          };
+          await recordInIndex(folder.id, owner, doc);
+          // נכנס מיד לחיפוש, וזיהוי הטקסט מתחיל ברקע
+          void addToLibrary(doc, folder.id);
           replaceLast({ text: t('send.step.saved', { folder: folder.name }), ok: true });
         } catch (e) {
           replaceLast({ text: t('send.step.saveFailed', { message: (e as Error).message }), ok: false });

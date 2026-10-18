@@ -2,7 +2,7 @@
 // (ה-Blob של jsdom חסר arrayBuffer, שקיים בכל דפדפן אמיתי וב-Node)
 import { describe, expect, it } from 'vitest';
 import { buildMimeMessage, encodeFilenameParam, encodeHeader, isValidEmail, toBase64Url, wrap76 } from './mime';
-import { addToIndex, emptyIndex, normalizeTags, type IndexDoc } from './docIndex';
+import { addToIndex, emptyIndex, normalizeTags, patchDoc, pendingOcr, type IndexDoc } from './docIndex';
 import { DEFAULT_SETTINGS, fillTemplate, newerSettings, normalizeSettings } from './settings';
 import { tagsDescription } from '../google/drive';
 
@@ -103,6 +103,16 @@ describe('document index', () => {
     index = addToIndex(index, doc('a', 'new'), 'me');
     expect(index.docs).toHaveLength(1);
     expect(index.docs[0].title).toBe('new');
+  });
+
+  it('updates recognized text of one document and lists what is still pending', () => {
+    let index = addToIndex(emptyIndex('me'), doc('a'), 'me');
+    index = addToIndex(index, doc('b'), 'me');
+    expect(pendingOcr(index).map((d) => d.id)).toEqual(['b', 'a']);
+    index = patchDoc(index, 'a', { ocrText: 'טקסט', ocrStatus: 'done' });
+    expect(index.docs.find((d) => d.id === 'a')).toMatchObject({ ocrText: 'טקסט', ocrStatus: 'done' });
+    expect(pendingOcr(index).map((d) => d.id)).toEqual(['b']);
+    expect(patchDoc(index, 'missing', { ocrStatus: 'done' })).toBe(index);
   });
 
   it('cleans tags: no #, no duplicates, no empty ones', () => {

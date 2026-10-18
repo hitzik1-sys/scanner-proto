@@ -121,6 +121,14 @@ export async function signOut(): Promise<void> {
   notify();
 }
 
+/**
+ * יש אישור גישה בתוקף, בלי לפתוח חלון. עבודה ברקע (סנכרון, זיהוי טקסט) רצה רק כשזה true,
+ * כי דפדפנים חוסמים חלון התחברות שלא נפתח מלחיצה של המשתמש.
+ */
+export function hasValidToken(): boolean {
+  return !!accessToken && Date.now() < expiresAt;
+}
+
 /** אישור גישה בתוקף. אם פג, מבקש חדש (בדרך כלל בלי שהמשתמש יצטרך לעשות כלום) */
 export async function getToken(): Promise<string> {
   if (accessToken && Date.now() < expiresAt) return accessToken;

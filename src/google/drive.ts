@@ -44,9 +44,14 @@ async function replaceContent(fileId: string, blob: Blob): Promise<void> {
   });
 }
 
-/** מוצא את תיקיית המסמכים לפי שם, או יוצר אותה. האפליקציה רואה רק תיקייה שהיא עצמה יצרה */
+/** מוצא את תיקיית המסמכים לפי שם. האפליקציה רואה רק תיקייה שהיא עצמה יצרה */
+export async function findFolder(name: string): Promise<DriveFile | null> {
+  return findOne(`name='${esc(name)}' and mimeType='${FOLDER_MIME}'`);
+}
+
+/** מוצא את תיקיית המסמכים, או יוצר אותה */
 export async function ensureFolder(name: string): Promise<DriveFile> {
-  const found = await findOne(`name='${esc(name)}' and mimeType='${FOLDER_MIME}'`);
+  const found = await findFolder(name);
   if (found) return found;
   return json<DriveFile>(`${API}files?fields=id,name,webViewLink`, {
     method: 'POST',
@@ -64,22 +69,76 @@ export async function uploadPdf(folderId: string, blob: Blob, name: string, tags
   return upload(blob, { name, parents: [folderId], mimeType: 'application/pdf', description: tagsDescription(tags) });
 }
 
-/** מוסיף את המסמך לקובץ האינדקס שבתיקייה (או יוצר אותו) */
-export async function recordInIndex(folderId: string, owner: string, doc: IndexDoc): Promise<void> {
-  const existing = await findOne(`name='${INDEX_NAME}' and '${folderId}' in parents`);
-  let index: DocIndex = emptyIndex(owner);
-  if (existing) {
+async function findIndexFile(folderId: string): Promise<DriveFile | null> {
+  return findOne(`name='${INDEX_NAME}' and '${folderId}' in parents`);
+}
+
+/** קורא את קובץ האינדקס שבתיקייה. אם אין (או שהוא פגום), מחזיר אינדקס ריק */
+export async function readIndex(folderId: string, owner: string): Promise<DocIndex> {
+  const f = await findIndexFile(folderId);
+  if (!f) return emptyIndex(owner);
+  try {
+    const index = await json<DocIndex>(`${API}files/${f.id}?alt=media`);
+    return Array.isArray(index?.docs) ? index : emptyIndex(owner);
+  } catch {
+    return emptyIndex(owner); // קובץ פגום: מתחילים מחדש, ה-PDF עצמם לא נפגעים
+  }
+}
+
+/**
+ * קורא, משנה וכותב את קובץ האינדקס. הקריאה צמודה לכתיבה, כדי לא לדרוס
+ * שינוי שנעשה בינתיים ממכשיר אחר.
+ */
+export async function updateIndex(
+  folderId: string,
+  owner: string,
+  change: (index: DocIndex) => DocIndex,
+): Promise<DocIndex> {
+  const f = await findIndexFile(folderId);
+  let index = emptyIndex(owner);
+  if (f) {
     try {
-      index = await json<DocIndex>(`${API}files/${existing.id}?alt=media`);
+      const cur = await json<DocIndex>(`${API}files/${f.id}?alt=media`);
+      if (Array.isArray(cur?.docs)) index = cur;
     } catch {
-      index = emptyIndex(owner); // קובץ פגום: מתחילים מחדש, ה-PDF עצמם לא נפגעים
+      /* קובץ פגום: נכתב מחדש */
     }
   }
-  const next = addToIndex(index, doc, owner);
+  const next = change(index);
   const blob = new Blob([JSON.stringify(next, null, 2)], { type: 'application/json' });
   // עדכון התוכן שומר על אותו מזהה קובץ, כך שבני משפחה שבחרו בו ממשיכים לקבל עדכונים
-  if (existing) await replaceContent(existing.id, blob);
+  if (f) await replaceContent(f.id, blob);
   else await upload(blob, { name: INDEX_NAME, parents: [folderId], mimeType: 'application/json' });
+  return next;
+}
+
+/** מוסיף את המסמך לקובץ האינדקס שבתיקייה (או יוצר אותו) */
+export async function recordInIndex(folderId: string, owner: string, doc: IndexDoc): Promise<DocIndex> {
+  return updateIndex(folderId, owner, (index) => addToIndex(index, doc, owner));
+}
+
+const MAX_OCR_TEXT = 20_000;
+
+/**
+ * זיהוי טקסט בעברית: העתקה של ה-PDF למסמך Google Docs עם OCR, ייצוא כטקסט, ומחיקת העותק.
+ * זמן טיפוסי: 13-15 שניות למסמך. גוגל מזהה רק 10 עמודים ראשונים, ועד 2MB.
+ */
+export async function recognizeText(fileId: string, name: string): Promise<string> {
+  const copy = await json<{ id: string }>(`${API}files/${fileId}/copy?ocrLanguage=he&fields=id`, {
+    method: 'POST',
+    body: JSON.stringify({ name: `_ocr_${name}`, mimeType: 'application/vnd.google-apps.document' }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+  try {
+    const r = await googleFetch(`${API}files/${copy.id}/export?mimeType=text/plain`);
+    return (await r.text()).replace(/^﻿/, '').trim().slice(0, MAX_OCR_TEXT);
+  } finally {
+    await googleFetch(`${API}files/${copy.id}`, { method: 'DELETE' }).catch(() => {});
+  }
+}
+
+export function driveViewUrl(fileId: string): string {
+  return `https://drive.google.com/file/d/${fileId}/view`;
 }
 
 // ===== גיבוי הגדרות בתיקייה הנסתרת של האפליקציה (appDataFolder) =====

@@ -32,6 +32,21 @@ export function addToIndex(index: DocIndex, doc: IndexDoc, owner: string, now = 
   return { version: 1, owner: index.owner || owner, updatedAt: now.toISOString(), docs };
 }
 
+/** מעדכן שדות של מסמך קיים (למשל טקסט שזוהה). מסמך שלא קיים: בלי שינוי */
+export function patchDoc(index: DocIndex, id: string, patch: Partial<IndexDoc>, now = new Date()): DocIndex {
+  if (!index.docs.some((d) => d.id === id)) return index;
+  return {
+    ...index,
+    updatedAt: now.toISOString(),
+    docs: index.docs.map((d) => (d.id === id ? { ...d, ...patch } : d)),
+  };
+}
+
+/** מסמכים שעוד צריך לזהות בהם טקסט, מהחדש לישן */
+export function pendingOcr(index: DocIndex): IndexDoc[] {
+  return index.docs.filter((d) => d.ocrStatus === 'pending');
+}
+
 /** מנקה ומאחד תגיות: בלי # בהתחלה, בלי כפילויות, בלי ריקות */
 export function normalizeTags(tags: string[]): string[] {
   const out: string[] = [];
