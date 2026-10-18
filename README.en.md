@@ -201,6 +201,7 @@ It becomes visible to others only if **you** tap "Share for viewing" and type an
 
 ## Notes
 
+- **Exit button** (red icon at the top): closes the app when the phone allows it. If not, a message explains how to close it manually. If there is an unsent scan, it asks first.
 - **Day / night mode:** in Settings → **מצב תצוגה** (Display mode): **יום** (Day), **לילה** (Night), or **אוטומטי** (Automatic, follows the phone).
 - On first sign-in, Google shows "Google hasn't verified this app". This is expected for an app in testing mode: click **Continue**.
 - The tests create a folder in Drive named `מסמכים סרוקים (בדיקה)` ("Scanned documents (test)"). You can delete it when you're done.

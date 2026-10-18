@@ -212,6 +212,7 @@ a.button { text-decoration: none; }
 .cam-controls button.on { background: #e3b341; border-color: #e3b341; color: #1b1f24; }
 
 /* ===== מסך ראשי, שיתוף מסמך ===== */
+.exit-button { color: var(--danger); }
 .home-button { color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
 .continue-box { border-color: var(--accent); background: var(--accent-soft); }
 .continue-box p { margin: 0 0 4px; font-weight: 600; }

@@ -52,6 +52,14 @@ export default function App() {
   // לפני הציור, כדי שהמסך לא יהבהב בצבע הלא נכון בפתיחה
   useLayoutEffect(() => applyTheme(settings.theme), [settings.theme]);
 
+  // דפדפנים מאפשרים לסגור רק חלק מהחלונות (למשל אפליקציה שמותקנת למסך הבית).
+  // אם החלון לא נסגר, מסבירים איך סוגרים ידנית
+  const exitApp = () => {
+    if (pages.length && !docFinished && !confirm(t('app.exitConfirm'))) return;
+    window.close();
+    setTimeout(() => alert(t('app.exitManual')), 300);
+  };
+
   const openSettings = () => {
     beforeSettings.current = screen;
     setScreen('settings');
@@ -182,6 +190,11 @@ export default function App() {
               ⚙
             </button>
           )}
+          <button className="icon-button exit-button" onClick={exitApp} aria-label={t('app.exit')} title={t('app.exit')}>
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+              <path d="M12 3v9M7.05 6.05a7 7 0 1 0 9.9 0" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+            </svg>
+          </button>
         </header>
       )}
 
