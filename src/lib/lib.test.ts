@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fullQuad, maxShift, orderPoints } from './geometry';
-import { dateStamp, kb, pdfFileName } from './files';
+import { dateStamp, displayDate, kb, localDate, pdfFileName } from './files';
 
 describe('orderPoints', () => {
   it('orders a shuffled rectangle starting at top-left, clockwise', () => {
@@ -59,6 +59,14 @@ describe('file names', () => {
 
   it('formats the date as YYYYMMDD', () => {
     expect(dateStamp(d)).toBe('20261007');
+  });
+
+  it('uses the local date, even just after midnight', () => {
+    expect(localDate(new Date(2026, 9, 7, 0, 30))).toBe('2026-10-07');
+  });
+
+  it('shows dates as day.month.year', () => {
+    expect(displayDate('2026-10-07')).toBe('7.10.2026');
   });
 
   it('builds YYYYMMDD_text.pdf with underscores instead of spaces', () => {

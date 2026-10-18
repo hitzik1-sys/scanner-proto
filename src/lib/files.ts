@@ -6,6 +6,18 @@ export function dateStamp(d = new Date()): string {
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
 }
 
+/** תאריך בפורמט YYYY-MM-DD לפי השעון המקומי (toISOString נותן תאריך של UTC, שיכול להיות של אתמול) */
+export function localDate(d = new Date()): string {
+  const s = dateStamp(d);
+  return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6)}`;
+}
+
+/** תאריך לתצוגה, למשל 19.10.2026 */
+export function displayDate(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return `${d}.${m}.${y}`;
+}
+
 /**
  * שם קובץ בפורמט YYYYMMDD_טקסט.pdf, למשל 20261017_חשבון_חשמל.pdf.
  * תווים שאסורים בשמות קבצים מוסרים, וכל רצף של רווחים (או קווים תחתונים)
