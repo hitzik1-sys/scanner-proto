@@ -1,0 +1,118 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --ink: #1b1f24;
+  --quiet: #5c6570;
+  --line: #d9dde3;
+  --accent: #1f5fbf;
+  --accent-soft: #e3ecfa;
+  --warn: #9a6700;
+  --danger: #c62828;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15181c;
+    --card: #1e2227;
+    --ink: #e8eaed;
+    --quiet: #9aa3ad;
+    --line: #353b43;
+    --accent: #5b9bff;
+    --accent-soft: #1d2b44;
+    --warn: #e3b341;
+    --danger: #ff6b6b;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: system-ui, "Segoe UI", Arial, "Noto Sans Hebrew", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.top {
+  padding: 10px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 5;
+}
+.top h1 { font-size: 17px; margin: 0; }
+
+.page { max-width: 720px; margin: 0 auto; padding: 14px 16px calc(32px + env(safe-area-inset-bottom)); }
+h2 { font-size: 20px; margin: 4px 0 8px; }
+
+/* ===== כפתורים ===== */
+button, .button {
+  display: inline-flex; align-items: center; justify-content: center;
+  font: inherit; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  min-height: 46px; text-align: center;
+}
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.big { font-size: 18px; min-height: 58px; }
+button.link { background: none; border: 0; padding: 0; min-height: 0; color: var(--accent); text-decoration: underline; }
+button.danger-text { color: var(--danger); background: none; }
+
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.buttons.col { flex-direction: column; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; margin: 6px 0 10px; }
+
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.segmented button { border: 0; border-radius: 0; min-height: 42px; padding: 8px 12px; font-size: 15px; }
+.segmented button + button { border-inline-start: 1px solid var(--line); }
+.segmented button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+/* ===== טקסטים ===== */
+.hint { color: var(--quiet); margin: 2px 0 10px; }
+.hint.warn { color: var(--warn); }
+.status { color: var(--quiet); font-size: 14px; margin: 6px 0; }
+.status.error { color: var(--danger); }
+.page-of { font-weight: 600; margin: 0 0 4px; }
+.file-name { font-weight: 600; word-break: break-word; margin: 4px 0; }
+.footer-link { margin-top: 32px; font-size: 13px; }
+.footer-link a { color: var(--quiet); }
+
+.field { display: flex; flex-direction: column; gap: 4px; margin: 14px 0 4px; font-size: 14px; color: var(--quiet); }
+input {
+  font: inherit; color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-height: 46px; width: 100%;
+}
+
+/* ===== מצלמה: מסך מלא, הכפתורים תמיד בתחתית ===== */
+.screen-camera { position: fixed; inset: 0; background: #000; }
+.camera { position: fixed; inset: 0; z-index: 20; background: #000; display: flex; flex-direction: column; }
+.cam-stage { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.video-wrap { position: relative; line-height: 0; }
+.video-wrap video { display: block; width: auto; height: auto; }
+.video-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.flash { position: absolute; inset: 0; background: #fff; pointer-events: none; animation: flash .35s ease-out forwards; }
+@keyframes flash { from { opacity: .7; } to { opacity: 0; } }
+.cam-error { position: absolute; inset-inline: 16px; color: #fff; text-align: center; line-height: 1.6; }
+.cam-controls { flex: none; background: #000; padding: 6px 16px calc(10px + env(safe-area-inset-bottom)); }
+.cam-controls .status { color: #d0d4da; margin: 2px 0 6px; text-align: center; min-height: 21px; }
+.cam-controls .buttons { margin: 0; }
+.cam-controls .buttons button { flex: 1; min-width: 0; white-space: nowrap; }
+.cam-controls .buttons .capture { flex: 1 1 100%; }
+.cam-controls button:not(.primary) { background: #24282e; border-color: #3a3f46; color: #fff; }
+
+/* ===== חיתוך ותצוגה מקדימה ===== */
+.crop-wrap { width: 100%; }
+.crop-canvas { display: block; margin: 0 auto; touch-action: none; border-radius: 8px; max-width: 100%; }
+.preview { min-height: 120px; }
+.preview canvas { display: block; max-width: 100%; max-height: 58vh; margin: 0 auto; border: 1px solid var(--line); background: #fff; }
+
+/* ===== תמונות קטנות של העמודים ===== */
+.thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.thumbs img { display: block; height: 120px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.thumbs.small img { height: 80px; }
+.thumb { position: relative; padding: 0; min-width: 60px; min-height: 120px; background: none; border: 0; }
+.thumb span {
+  position: absolute; bottom: 4px; inset-inline-start: 4px; min-width: 22px; padding: 1px 6px;
+  border-radius: 11px; background: var(--accent); color: #fff; font-size: 13px; line-height: 20px; text-align: center;
+}
