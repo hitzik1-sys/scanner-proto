@@ -195,12 +195,15 @@ a.button { text-decoration: none; }
 .snippet mark { background: #fff1a8; color: #1b1f24; border-radius: 3px; padding: 0 1px; }
 .doc-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
 .doc-foot .status { margin: 0; }
+.doc-meta { display: flex; flex-direction: column; min-width: 0; }
+.ocr-note { font-size: 12px; line-height: 1.3; }
 
 /* ===== רמה מתקדמת ===== */
 .thumb-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .move { display: flex; gap: 4px; }
 .move button { min-height: 32px; min-width: 40px; padding: 2px 8px; font-size: 16px; }
-.doc-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.doc-actions { display: flex; flex: none; gap: 6px; }
+.doc-actions .small { padding: 6px 10px; white-space: nowrap; }
 /* "סגור פרטים" / "סגור שיתוף": בולט עד שסוגרים */
 .doc-actions button.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
 .doc-details { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 6px; }

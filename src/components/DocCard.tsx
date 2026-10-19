@@ -98,14 +98,22 @@ export default function DocCard({ doc, snippet, advanced = false, onSettings }: 
       )}
       {snippet && <SnippetText snippet={snippet} />}
       <div className="doc-foot">
-        <span className="status">
-          {doc.ocrStatus === 'pending'
-            ? t('search.ocrPending')
-            : doc.ocrStatus === 'failed'
-              ? t('search.ocrFailed')
-              : t('search.pages', { count: doc.pages })}
+        <span className="doc-meta">
+          <span className="status">{t('search.pages', { count: doc.pages })}</span>
+          {doc.ocrStatus !== 'done' && (
+            <span className="status ocr-note">
+              {doc.ocrStatus === 'failed' ? t('search.ocrFailed') : t('search.ocrPending')}
+            </span>
+          )}
         </span>
+        {/* מימין לשמאל: פתח, שתף, פרטים. תמיד בשורה אחת */}
         <span className="doc-actions">
+          <a className="button small" href={driveViewUrl(doc.id)} target="_blank" rel="noopener">
+            {t('search.open')}
+          </a>
+          <button className={sharing ? 'small active' : 'small'} aria-expanded={sharing} onClick={toggleShare}>
+            {sharing ? t('doc.closeShare') : t('share.button')}
+          </button>
           {advanced && (
             <button
               className={open ? 'small active' : 'small'}
@@ -118,12 +126,6 @@ export default function DocCard({ doc, snippet, advanced = false, onSettings }: 
               {open ? t('doc.closeDetails') : t('doc.details')}
             </button>
           )}
-          <button className={sharing ? 'small active' : 'small'} aria-expanded={sharing} onClick={toggleShare}>
-            {sharing ? t('doc.closeShare') : t('share.button')}
-          </button>
-          <a className="button small" href={driveViewUrl(doc.id)} target="_blank" rel="noopener">
-            {t('search.open')}
-          </a>
         </span>
       </div>
 
