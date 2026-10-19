@@ -14,6 +14,10 @@ import SaveSend from './screens/SaveSend';
 import SettingsScreen from './screens/SettingsScreen';
 import Search from './screens/Search';
 
+// אייפון ואייפד (גם אייפד שמציג את עצמו כמק) לא מאפשרים לאפליקציה מאתר לסגור את עצמה,
+// אז שם כפתור היציאה לא מוצג
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 let nextId = 1;
 const newPage = (blob: Blob): Page => ({
   id: nextId++,
@@ -190,11 +194,13 @@ export default function App() {
               ⚙
             </button>
           )}
-          <button className="icon-button exit-button" onClick={exitApp} aria-label={t('app.exit')} title={t('app.exit')}>
-            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-              <path d="M12 3v9M7.05 6.05a7 7 0 1 0 9.9 0" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-            </svg>
-          </button>
+          {!isIOS && (
+            <button className="icon-button exit-button" onClick={exitApp} aria-label={t('app.exit')} title={t('app.exit')}>
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                <path d="M12 3v9M7.05 6.05a7 7 0 1 0 9.9 0" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
         </header>
       )}
 
