@@ -69,8 +69,8 @@
   7. מדיניות פרטיות, אנגלית, התאמות (Claude)
   8. אימות האפליקציה בגוגל (`gmail.send` היא הרשאה רגישה)
   9. גוגל פליי: חשבון מפתח (25$), מעטפת TWA, בדיקה סגורה (כ־12 בודקים, 14 יום), פרסום
-- **שם המותג:** **Coconut Rocket** (נבחר 2026-10-20). דומיין: **`coconutrocketapps.com`** (נבדק שפנוי, עוד לא נקנה), Gmail: **`coconutrocketapps@gmail.com`** (נפתח 2026-10-20, עם אימות דו-שלבי). נפסלו: PineappleApps (תפוס, ו־"apple" בשם מסוכן מול Apple). **שם האפליקציה:** עוד לא נבחר (הוצעו Inkvault, Sheetkeeper).
-- **השלב הנוכחי:** 2 (Cloudflare וקניית הדומיין). שלבים 0–1 הושלמו
+- **שם המותג:** **Coconut Rocket** (נבחר 2026-10-20). דומיין: **`coconutrocketapps.com`** (נקנה ב־Cloudflare 2026-10-20, Active, חשבון Cloudflare על ה־Gmail החדש עם אימות דו-שלבי), Gmail: **`coconutrocketapps@gmail.com`** (נפתח 2026-10-20, עם אימות דו-שלבי). נפסלו: PineappleApps (תפוס, ו־"apple" בשם מסוכן מול Apple). **שם האפליקציה:** עוד לא נבחר (הוצעו Inkvault, Sheetkeeper).
+- **השלב הנוכחי:** 3 (GitHub חדש, מאגר פרטי `scanner`). שלבים 0–2 הושלמו
 
 ## איך זה רץ
 
