@@ -64,13 +64,13 @@
   2. חשבון Cloudflare וקניית דומיין
   3. חשבון GitHub חדש עם ה־Gmail החדש, מאגר פרטי ריק, הזמנת החשבון הפרטי כ־collaborator, והתקנת Claude על המאגר
   4. העתקת הקוד וניקוי (Claude)
-  5. Cloudflare Pages: חיבור למאגר וכתובת `scanner.<דומיין>`
+  5. Cloudflare Pages: חיבור למאגר וכתובת `<שם-האפליקציה>.coconutrocketapps.com`
   6. פרויקט Google Cloud חדש בחשבון החדש, התחברות על הדומיין
   7. מדיניות פרטיות, אנגלית, התאמות (Claude)
   8. אימות האפליקציה בגוגל (`gmail.send` היא הרשאה רגישה)
   9. גוגל פליי: חשבון מפתח (25$), מעטפת TWA, בדיקה סגורה (כ־12 בודקים, 14 יום), פרסום
-- **שם המותג:** **Coconut Rocket** (נבחר 2026-10-20). דומיין מתוכנן `coconutrocket.com` (עוד לא נבדק שפנוי), Gmail מתוכנן `coconutrocket.apps@gmail.com`. נפסלו: PineappleApps (תפוס, ו־"apple" בשם מסוכן מול Apple). **שם האפליקציה:** עוד לא נבחר (הוצעו Inkvault, Sheetkeeper).
-- **השלב הנוכחי:** סוף 0 (לבדוק שהדומיין פנוי), ואחריו 1
+- **שם המותג:** **Coconut Rocket** (נבחר 2026-10-20). דומיין: **`coconutrocketapps.com`** (נבדק שפנוי, עוד לא נקנה), Gmail מתוכנן `coconutrocket.apps@gmail.com`. נפסלו: PineappleApps (תפוס, ו־"apple" בשם מסוכן מול Apple). **שם האפליקציה:** עוד לא נבחר (הוצעו Inkvault, Sheetkeeper).
+- **השלב הנוכחי:** 1 (Gmail)
 
 ## איך זה רץ
 
